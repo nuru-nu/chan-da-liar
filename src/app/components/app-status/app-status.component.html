@@ -1,4 +1,8 @@
-<div class="flex flex-col items-center">
+<div [ngClass]="[
+    'flex', 'flex-col', 'items-center',
+    loginState.value === 'success' ? 'cursor-pointer' : '',
+]" (click)="openExplorer()">
+
   <div class="text-lg">Cost: {{cost$ | async}} </div>
   <div class="text-xs">~{{tokens$ | async}} tokens</div>
 

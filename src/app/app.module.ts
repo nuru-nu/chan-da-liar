@@ -32,6 +32,7 @@ import { ConfigurationLightSidebarComponent } from './components/configuration-l
 import { StatusbarComponent } from './components/statusbar/statusbar.component';
 import { AppMainComponent } from './app-main/app-main.component';
 import { StatusbarErrorHandler } from './states/statusbar.service';
+import { FirebaseExplorerComponent } from './components/firebase-explorer/firebase-explorer.component';
 import { PrerecordingLaneNewComponent } from './components/prerecording-lane-new/prerecording-lane-new.component';
 
 @NgModule({
@@ -64,6 +65,7 @@ import { PrerecordingLaneNewComponent } from './components/prerecording-lane-new
     ConfigurationLightSidebarComponent,
     StatusbarComponent,
     AppMainComponent,
+    FirebaseExplorerComponent,
     PrerecordingLaneNewComponent,
   ],
   imports: [
