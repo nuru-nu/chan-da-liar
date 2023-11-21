@@ -1,1 +1,9 @@
-<p>firebase-explorer works!</p>
+<div *ngIf="conversations$ | async as conversations">
+
+  <div
+  *ngFor="let conv of conversations"
+  >
+    {{title(conv)}}
+  </div>
+
+</div>

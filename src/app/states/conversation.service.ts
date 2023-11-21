@@ -10,6 +10,8 @@ import { KeyboardService } from '../keyboard';
 export type ConversationRole = 'assistant' | 'user' | 'system';
 export type Decision = 'yes' | 'skip' | 'open';
 
+export type CompletedConversation = CompletedConversationMessage[];
+
 export interface CompletedConversationMessage {
 
   completed: true;

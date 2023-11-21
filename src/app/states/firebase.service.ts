@@ -1,3 +1,5 @@
+// https://firebase.google.com/docs/reference/js/firestore_lite
+
 import { Injectable } from '@angular/core';
 import { ConfigService } from '../config.service';
 import { BehaviorSubject, combineLatest, mergeMap, shareReplay} from 'rxjs';
@@ -14,10 +16,13 @@ import {
    setDoc,
    getDocs,
    deleteDoc,
-   runTransaction
+   runTransaction,
+   query,
+   limit
 } from 'firebase/firestore/lite';
 import { User, browserLocalPersistence, getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { Recording } from "./prerecording.service";
+import { CompletedConversation, CompletedConversationMessage } from './conversation.service';
 
 const DEFAULT_API_KEY = 'AIzaSyCbsk8PYE8siL58giIaDG1BjXLmtNWPjSY';
 const DEFAULT_APP_ID = '1:949850774703:web:67bc87b614929fed3a085a';
@@ -216,10 +221,11 @@ export class FirebaseService {
     await Promise.all(promises);
   }
 
-  private async getDocs(relativePath: string) {
+  private async getDocs(relativePath: string, limit_?: number) {
     const path = this.getPath(relativePath);
     const coll = collection(this.firestore!, path);
-    const snap = await getDocs(coll);
+    const snap = await getDocs(
+      limit_ ? query(coll, limit(limit_)) : coll);
     return snap.docs;
   }
 
@@ -237,6 +243,12 @@ export class FirebaseService {
       });
     });
     this.prerecordings.next(docs);
+  }
+
+  async loadConversations(limit_?: number): Promise<CompletedConversation[]> {
+    return (await this.getDocs(this.conversationCollection, limit_)).map(doc => {
+      return doc.data()['conversation'] as CompletedConversation;
+    });
   }
 
   private firestoreInit(settings: FirebaseSettings) {
