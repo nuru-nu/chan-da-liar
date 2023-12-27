@@ -31,8 +31,12 @@
         <div *ngIf="message.completed && message.prefix">
           (prefixed)
         </div>
-        <div *ngIf="message.completed" class="whitespace-pre-wrap">
-          {{ displayMessage(message) }}
+
+        <div
+            *ngIf="message.completed && message.id !== editing"
+            class="whitespace-pre-wrap"
+            (click)="edit($event)"
+            >{{ displayMessage(message) }}
           <button
             (click)="toggleExpanded()"
             *ngIf="message.role === 'system'"
@@ -40,9 +44,20 @@
             {{ expanded ? 'Truncate' : 'Expand' }}
           </button>
         </div>
-        <div *ngIf="!message.completed" class="part ongoing">
-          {{ message.text$ | async }}...
+
+        <div 
+            *ngIf="message.completed && message.id === editing"
+            class="flex-grow flex"
+            >
+          <textarea
+              class="flex-grow outline-none"
+              (keydown)="keydown($event)"
+              (focus)="focus($event)"
+              >{{message.text}}</textarea>
         </div>
+
+        <div *ngIf="!message.completed" class="part ongoing"
+          >{{ message.text$ | async }}...</div>
 
         <div
           class="icons-top" *ngIf="developer && message.completed">
@@ -68,9 +83,6 @@
   <kbd>SPACE</kbd> to accept,
   <kbd>BACKSPACE</kbd> to reject,
   <kbd>ENTER</kbd> to generate answer,
-  <!--
-  <kbd>Q</kbd> to abort,
-  <kbd>A</kbd> to add answer,
-  <kbd>E</kbd> to edit.
-  -->
+  <kbd>SHIFT</kbd> to the end;
+  <kbd>UP</kbd> to go back.
 </div>

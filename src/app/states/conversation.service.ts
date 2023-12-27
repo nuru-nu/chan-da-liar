@@ -137,24 +137,14 @@ export class ConversationService {
       }
     });
 
-    keyboard.registerExclusive('Space', () => this.decide('yes'));
-    keyboard.registerExclusive('Enter', () => this.allYesAndPrompt());
-    keyboard.registerExclusive('Backspace', () => this.decide('skip'));
-    // keyboard.registerExclusive('KeyX', () => this.abort());
-    // keyboard.registerExclusive('ArrowLeft', () => this.back());
-
-    // keyboard.registerExclusive('KeyA', () => this.addAssistant());
+    keyboard.registerExclusive('Space', (e: KeyboardEvent) => this.decide('yes', e.shiftKey));
+    keyboard.registerExclusive('Enter', (e: KeyboardEvent) => this.allYesAndPrompt(e.shiftKey));
+    keyboard.registerExclusive('Backspace', (e: KeyboardEvent) => this.decide('skip', e.shiftKey));
+    keyboard.registerExclusive('ArrowUp', (e: KeyboardEvent) => this.undecide());
   }
 
-  // private abort() {
-  //   //
-  // }
-
-  // private addAssistant() {
-  // }
-
-  private allYesAndPrompt() {
-    while (this.highlightSubject.value) this.decide('yes');
+  private allYesAndPrompt(toTheEnd?: boolean) {
+    while (this.highlightSubject.value) this.decide('yes', toTheEnd);
     this.prompt();
   }
 
@@ -171,7 +161,7 @@ export class ConversationService {
     });
   }
 
-  private decide(decision: Decision) {
+  private decide(decision: Decision, toTheEnd?: boolean) {
     const message = this.highlightSubject.value;
     if (message) {
       message.decision = decision;
@@ -179,6 +169,32 @@ export class ConversationService {
       if (message.role === 'assistant' && decision === 'yes') {
         this.queue(message);
       }
+      if (toTheEnd) this.decide(decision, toTheEnd);
+    }
+  }
+
+  private predecessor(successor: ConversationMessage): ConversationMessage | null {
+    const messages = this.messagesSubject.value;
+    for (let i = 1; i < messages.length; i++) {
+      if (messages[i].id === successor.id) {
+        return messages[i - 1];
+      }
+    }
+    return null;
+  }
+
+  private undecide() {
+    const messages = this.messagesSubject.value;
+    const highlight = this.highlightSubject.value;
+    const message = (
+      highlight === null
+      ? messages[messages.length - 1]
+      : this.predecessor(highlight)
+    );
+    if (message?.completed) {
+      const completed = message as CompletedConversationMessage;
+      message.decision = 'open';
+      this.nextMessages(messages);
     }
   }
 
@@ -221,6 +237,18 @@ export class ConversationService {
     }
     this.messagesSubject.next(messages);
     this.highlightSubject.next(highlight);
+  }
+
+  editMessage(id: number, text: string) {
+    const messages = this.messagesSubject.value;
+    const index = messages.findIndex(message => message.id === id);
+    if (index === -1) throw new Error(`Could not find message id=${id}`);
+    const message = messages[index];
+    if (!message.completed) throw new Error('Cannot only edit completed message');
+    if (message.decision !== 'open') throw new Error('Can only edit "open" message');
+    message.text = text;
+    messages[index] = message;
+    this.messagesSubject.next(messages);
   }
 
   private getPromptMessages(messages: ConversationMessage[]): PromptMessage[] {

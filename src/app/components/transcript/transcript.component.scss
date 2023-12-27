@@ -7,7 +7,7 @@
 }
 
 .message {
-  @apply flex px-2 py-1 my-2 mx-3 rounded-md relative self-start;
+  @apply flex flex-1 px-2 py-1 my-2 mx-3 rounded-md relative self-start;
 
   &.system {
     @apply text-xs bg-gray-50 text-gray-800 border border-gray-700;

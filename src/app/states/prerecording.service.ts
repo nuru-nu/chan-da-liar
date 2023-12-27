@@ -96,4 +96,9 @@ export class PrerecordingService {
      */
     return recordings[index];
   }
+
+  length(): number {
+    const recordings = this.config.get<Recording[]>(this.recordingsKey) || [];
+    return recordings.length;
+  }
 }

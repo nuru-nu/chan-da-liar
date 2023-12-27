@@ -3,7 +3,6 @@ import {
   Component,
   ElementRef,
   Input,
-  OnDestroy,
   OnInit,
   ViewChild,
 } from '@angular/core';
@@ -52,6 +51,9 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   expanded = false;
   developer = false;
   selectedModel = '?';
+
+  editing: number|null = null;
+  needsfocus = false;
 
   constructor(
     private speaker: SpeakerService,
@@ -124,5 +126,60 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   }
 
   dump(x: any): string { return JSON.stringify(x); }
+
+  private getId(el: HTMLElement): number {
+    const parent = el.closest('[data-part-id]') as HTMLElement;
+    const id = parseInt(parent.dataset['partId']!!);
+    return id;
+  }
+
+  edit(event: MouseEvent) {
+    const id = this.getId(event.target as HTMLElement);
+    const messages = this.conversation.messagesSubject.value.filter(
+      message => message.id === id
+    );
+    if (!messages.length) {
+      console.error('could not find id', id);
+      return;
+    }
+    const message = messages[0] as CompletedConversationMessage;
+    if (message.decision === 'open') {
+      this.editing = id;
+      this.needsfocus = true;
+    }
+  }
+
+  focus(event: FocusEvent) {
+    const textarea = event.target as HTMLTextAreaElement;
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }
+
+  ngAfterViewChecked() {
+    if (this.needsfocus) {
+      const container: HTMLElement | undefined = this.container?.nativeElement;
+      if (container) {
+        const firstTextarea = container.querySelector('textarea');
+        firstTextarea?.focus();
+        this.needsfocus = false;
+      }
+    }
+  }
+
+  keydown(event: KeyboardEvent): boolean {
+    if (event.key === 'Escape') {
+      this.editing = null;
+      return false;
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      const el = event.target as HTMLTextAreaElement;
+      const id = this.getId(el);
+      this.editing = null;
+      const text = el.value;
+      this.conversation.editMessage(id, text);
+      return false;
+    }
+    return true;
+  }
 
 }

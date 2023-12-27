@@ -2,6 +2,15 @@
   <app-input
     [heading]="'Light Controller Server IP'"
     [placeholder]="'http://localhost:8080'"
-    [value]="state.artnetServerIp"
+    [value]="state.serverAddress"
     (valueChanged)="setServerIp($event)"></app-input>
-</ng-container>
+
+    <div class="flex space-x-3">
+      <div>idleMax={{ idleMax.toFixed(0) }}</div>
+      <input class="grow"
+             type="range" min="17" max="60" step="1"
+             [ngModel]="idleMax"
+             (ngModelChange)="setIdleMax($event)">
+    </div>
+    
+  </ng-container>

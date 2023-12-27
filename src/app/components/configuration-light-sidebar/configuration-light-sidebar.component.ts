@@ -12,9 +12,16 @@ export class ConfigurationLightSidebarComponent implements ModalInstance<void> {
 
   state$ = this.light.state$;
 
+  idleMax = 25;
+
   constructor(private light: LightService) {}
 
   setServerIp(value: string) {
     this.light.setServerIp(value);
+  }
+
+  async setIdleMax(idleMax: number) {
+    await this.light.send({idleMax});
+    this.idleMax = idleMax;
   }
 }

@@ -8,6 +8,7 @@ import { OpenAiService } from '../states/open-ai.service';
 import { ConversationService } from '../states/conversation.service';
 import { OngoingRecognition } from '../states/ongoing-recognizer';
 import { AppService } from "../states/app.service";
+import { KeyboardService } from '../keyboard';
 
 @Component({
   selector: 'app-app-main',
@@ -21,18 +22,23 @@ export class AppMainComponent {
   overrideMode$ = this.app.state$.pipe(map(state => state.overrideMode));
   liveEditMode$ = this.app.state$.pipe(map(state => state.overrideMode && state.livePresetEdit))
 
+  expandedPrerecordings: boolean = false;
+
   constructor(
     private modal: ModalService,
     public viewContainerRef: ViewContainerRef,
-    private openAI: OpenAiService,
     private chanDaLiar: ChanDaLiarService,
     private app: AppService,
-    private conversation: ConversationService
+    private conversation: ConversationService,
+    keyboard: KeyboardService
   ) {
     firstValueFrom(this.state$).then((state) => {
       if (!state.ready) {
         this.openConfigurations(false);
       }
+    });
+    keyboard.registerExclusive('KeyP', (e: KeyboardEvent) => {
+      this.expandedPrerecordings = !this.expandedPrerecordings;
     });
   }
 

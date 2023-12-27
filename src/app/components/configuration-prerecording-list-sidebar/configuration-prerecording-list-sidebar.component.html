@@ -3,5 +3,9 @@
     <app-prerecoding-lane [allowEdit]="true" [allowDelete]="true" [editMode]="'sidepanel'" class="flex-grow min-h-0"></app-prerecoding-lane>
   </div>
 
-  <app-button (click)="create()">Create</app-button>
+  <div class="flex gap-3">
+    <app-button class="flex-1" (click)="create()">Create</app-button>
+    <app-button class="flex-1" (click)="export()">Export</app-button>
+    <app-button class="flex-1" (click)="import($event)">Import</app-button>
+  </div>
 </ng-container>

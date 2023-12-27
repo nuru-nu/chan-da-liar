@@ -13,7 +13,6 @@ import {
 import { BehaviorSubject, combineLatest, debounceTime, mergeMap, shareReplay} from 'rxjs';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 import { Cache } from '../utils/cache';
-import { LightService } from './light.service';
 import { FirebaseService } from './firebase.service';
 import { Recording } from "./prerecording.service";
 
@@ -92,8 +91,7 @@ export class AzureCognitiveService {
     shareReplay(1),
   );
 
-  constructor(private config: ConfigService, firebase: FirebaseService,
-              private light: LightService) {
+  constructor(private config: ConfigService, firebase: FirebaseService) {
     firebase.loginState.subscribe(async (loginState) => {
       if (loginState === 'success') {
         const config = await firebase.getConfig();
