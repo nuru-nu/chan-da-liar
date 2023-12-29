@@ -22,6 +22,21 @@
       (enterPressed)="doLogin()"
       (valueChanged)="setPassword($event)"></app-input>
 
+    <div *ngIf="(loginState | async) === 'success'" class="pt-3 flex-col flex gap-3">
+      <p>Settings:</p>
+      <app-input
+        [heading]="'User name'"
+        (valueChanged)="userNameChanged($event)"
+        [value]="state.userSettings.displayName || ''"></app-input>
+
+        <div class="flex flex-row-reverse">
+          <app-button class="flex-none"
+          (click)="updateSettings()"
+          [disabled]="!userSettingsChanged"
+          >Update</app-button>
+        </div>
+    </div>
+
     <div class="cursor-pointer underline text-gray-600" (click)="showAdvanced = !showAdvanced">
       {{showAdvanced ? 'Hide' : 'Show'}} advanced settings.
     </div>
@@ -52,12 +67,15 @@
       </div>
     </div>
 
+    <div class="flex-1">&nbsp;</div>
+
+    <app-button *ngIf="state.canLogin && (loginState | async) !== 'success'"
+      (click)="doLogin()"
+      >Login</app-button>
+    <app-button *ngIf="(loginState | async) === 'success'"
+      (click)="doLogout()"
+      >Logout</app-button>
+
   </div>
 
-  <app-button *ngIf="state.canLogin && (loginState | async) !== 'success'"
-    (click)="doLogin()"
-    >Login</app-button>
-  <app-button *ngIf="(loginState | async) === 'success'"
-    (click)="doLogout()"
-    >Logout</app-button>
 </ng-container>

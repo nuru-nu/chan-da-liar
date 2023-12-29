@@ -42,6 +42,7 @@ export interface FirebaseState {
   canLogin: boolean;
   settings: FirebaseSettings;
   loginState: LoginState;
+  userSettings: UserSettings;
   // user: User | null;
 }
 
@@ -49,6 +50,10 @@ export interface Config {
   azureApiKey: string;
   azureRegion: string;
   openaiApiKey: string;
+}
+
+export interface UserSettings {
+  displayName?: string;
 }
 
 // Login state machine is congtrolled by setting LoginState accordingly.
@@ -88,6 +93,7 @@ export class FirebaseService {
   loginState = new BehaviorSubject<LoginState>('load');
   error = new BehaviorSubject<string>('');
   password = new BehaviorSubject<string>('');
+  userSettings = new BehaviorSubject<UserSettings>({});
   private uuid: string|null = null;
 
   app: FirebaseApp|null = null;
@@ -102,9 +108,10 @@ export class FirebaseService {
     this.config.watch<string>(this.emailKey, DEFAULT_EMAIL),
     this.password,
     this.loginState,
+    this.userSettings,
   ]).pipe(
-    mergeMap(([apiKey, appId, projectId, email, password, loginState]) =>
-      fromPromise(this.mapState(apiKey ?? '', appId ?? '', projectId ?? '', email ?? '', password ?? '', loginState)),
+    mergeMap(([apiKey, appId, projectId, email, password, loginState, userSettings]) =>
+      fromPromise(this.mapState(apiKey ?? '', appId ?? '', projectId ?? '', email ?? '', password ?? '', loginState, userSettings)),
     ),
     shareReplay(1),
   );
@@ -245,6 +252,20 @@ export class FirebaseService {
     this.prerecordings.next(docs);
   }
 
+  private async loadUserSettings() {
+    const settings = await getDoc(await doc(this.firestore!, `users/${this.uuid}`));
+    this.userSettings.next(settings.data() as UserSettings);
+  }
+
+  async updateUserSettings(displayName?: string) {
+    const ref = await doc(this.firestore!, `users/${this.uuid}`);
+    const userSettings = {...this.userSettings.value};
+    if (typeof displayName !== 'undefined') {
+      userSettings.displayName = displayName;
+    }
+    await setDoc(ref, userSettings);
+  }
+
   async loadConversations(limit_?: number): Promise<CompletedConversation[]> {
     return (await this.getDocs(this.conversationCollection, limit_)).map(doc => {
       return doc.data()['conversation'] as CompletedConversation;
@@ -281,6 +302,7 @@ export class FirebaseService {
     try {
       await this.initSchema();
       await this.loadPrerecordings();
+      await this.loadUserSettings();
     } catch (e) {
       this.nextState('failure');
       const code = (e as FirebaseError).code;
@@ -323,6 +345,7 @@ export class FirebaseService {
     email: string,
     password: string,
     loginState: LoginState,
+    userSettings: UserSettings,
   ): Promise<FirebaseState> {
 
     const settings: FirebaseSettings = {apiKey, appId, projectId, email, password};
@@ -352,7 +375,8 @@ export class FirebaseService {
       ready: loginState === 'success',
       canLogin,
       settings,
-      loginState
+      loginState,
+      userSettings,
     };
   }
 }
