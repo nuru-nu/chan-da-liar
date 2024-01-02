@@ -73,7 +73,7 @@ async function listConversations(user, limit) {
   let n = 0, words = 0, msgs = 0, liarWords = 0, liarMsgs = 0;
   const byday = {};
   console.log('user', user);
-  (await db.collection(path).limit(0).get()).forEach(doc => {
+  (await db.collection(path).limit(limit || 0).get()).forEach(doc => {
     try {
       const s = summary(doc.data().conversation);
       console.log(`${doc.id}: ${s.date} ${s.time} - ${s.minutes} min - ${s.convLength} msgs, ${s.convWords} words - liar ${s.liarLength} msgs, ${s.liarWords} words`);
@@ -103,7 +103,7 @@ async function listAllConversations(limit) {
 }
 
 
-listAllConversations(0);
+// listAllConversations(0);
 
 
 async function show(path) {
@@ -111,3 +111,47 @@ async function show(path) {
 }
 
 // show('users/YZecRWH8YHPQtmP1CDgrE81RX612/conversation/1684821778064');
+
+async function fixConversations(user) {
+  const path = `users/${user}/conversation`;
+  const fixed = new Map();
+  (await db.collection(path).limit(0).get()).forEach(doc => {
+    try {
+      const data = doc.data();
+      const c = data.conversation;
+      for (const cc of c) {
+        if ('string' !== typeof cc.text) {
+          console.log('will fix', user.substring(0, 6), doc.id, cc.text);
+          if ('string' !== typeof cc.text.content) {
+            console.error('=> CANNOT FIX');
+          } else {
+            cc.text = cc.text.content;
+            fixed.set(doc.id, data);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('could not process', e, 'path', `${path}/${doc.id}`);
+    }
+  });
+  for(const [id, data] of fixed.entries()) {
+    await db.doc(`${path}/${id}`).set(data);
+  }
+}
+
+async function fixAllConversations() {
+  const docs = [];
+  (await db.collection('users').limit(0).get()).forEach(doc => docs.push(doc));
+  for (const doc of docs) {
+    await fixConversations(doc.id);
+  }
+}
+
+// fixAllConversations();
+
+async function copyUserConfig(src, dst) {
+  const doc = await db.doc(`users/${src}/info/config`).get();
+  await db.doc(`users/${dst}/info/config`).set(doc.data());
+}
+
+// copyUserConfig('D4C92Ukjy4VsyQglP6pCa2MfdKm2', 'CdFPywwXXwaQLtin1eKyRCPc5qr1');
