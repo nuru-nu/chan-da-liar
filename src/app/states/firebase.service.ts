@@ -18,11 +18,12 @@ import {
    deleteDoc,
    runTransaction,
    query,
-   limit
+   limit,
+   Transaction
 } from 'firebase/firestore/lite';
 import { User, browserLocalPersistence, getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { Recording } from "./prerecording.service";
-import { CompletedConversation, CompletedConversationMessage } from './conversation.service';
+import { CompletedConversation } from './conversation.service';
 
 const DEFAULT_API_KEY = 'AIzaSyCbsk8PYE8siL58giIaDG1BjXLmtNWPjSY';
 const DEFAULT_APP_ID = '1:949850774703:web:67bc87b614929fed3a085a';
@@ -43,7 +44,7 @@ export interface FirebaseState {
   settings: FirebaseSettings;
   loginState: LoginState;
   userSettings: UserSettings;
-  // user: User | null;
+  allUsers: AllUsers | null;
 }
 
 export interface Config {
@@ -53,8 +54,65 @@ export interface Config {
 }
 
 export interface UserSettings {
+  id?: string;  // this is also the key in AllUsers
   displayName?: string;
 }
+
+export type ConversationKey = string;
+export function makeConversationKey(uid: string, id: number) {
+  return `${uid}-${id}`;
+}
+export function parseConversationKey(key: ConversationKey) {
+  const [uid, id] = key.split('-');
+  return {uid, id: parseInt(id)};
+}
+function addUidToKey<T>(uid: string, map: Map<number, T>) {
+  return new Map([...map.entries()].map(([id, value]) =>
+    [makeConversationKey(uid, id), value]
+  ));
+}
+function removeUidFromKey<T>(map: Map<ConversationKey, T>) {
+  return new Map([...map.entries()].map(([key, value]) =>
+    [parseConversationKey(key).id, value]
+  ));
+}
+
+function mapToObject<T>(map: Map<number, T>): { [key: string]: T } {
+  const obj: { [key: string]: T } = {};
+  map.forEach((value, key) => {
+      obj[key] = value;
+  });
+  return obj;
+}
+function objectToMap<T>(obj: { [key: string]: T }): Map<number, T> {
+  return new Map<number, T>([...Object.entries(obj)].map(([k, v]) => [parseInt(k), v]));
+}
+
+const SUMMARIES_VERSION = 1;
+// users/{uid}/summaries/0
+export interface ConversationSummary {
+  archived: boolean;
+  date: Date;
+  minutes: number;
+  messages: number;
+  words: number;
+  deliarMessages: number;
+  deliarWords: number;
+}
+
+// users/{uid}/notes/0
+export interface ConversationNotes {
+  title?: string;
+  starred?: boolean;
+}
+
+// users/{uid}/conversation/{id}
+// users/{uid}/archived/{id}
+interface Conversation {
+  conversation: CompletedConversation;
+}
+
+export type AllUsers = Map<string, UserSettings>;
 
 // Login state machine is congtrolled by setting LoginState accordingly.
 // See `mapState()`.
@@ -88,12 +146,16 @@ export class FirebaseService {
   // Collections (relative to /users/<uuid>).
   private costCollection = 'cost';
   private conversationCollection = 'conversation';
+  private archiveCollection = 'archive';
+  private summariesCollection = 'summaries';
+  private notesCollection = 'notes';
   private prerecordingsCollection = 'prerecordings';
 
   loginState = new BehaviorSubject<LoginState>('load');
   error = new BehaviorSubject<string>('');
   password = new BehaviorSubject<string>('');
   userSettings = new BehaviorSubject<UserSettings>({});
+  allUsers = new BehaviorSubject<AllUsers | null>(null);
   private uuid: string|null = null;
 
   app: FirebaseApp|null = null;
@@ -109,9 +171,10 @@ export class FirebaseService {
     this.password,
     this.loginState,
     this.userSettings,
+    this.allUsers,
   ]).pipe(
-    mergeMap(([apiKey, appId, projectId, email, password, loginState, userSettings]) =>
-      fromPromise(this.mapState(apiKey ?? '', appId ?? '', projectId ?? '', email ?? '', password ?? '', loginState, userSettings)),
+    mergeMap(([apiKey, appId, projectId, email, password, loginState, userSettings, allUsers]) =>
+      fromPromise(this.mapState(apiKey ?? '', appId ?? '', projectId ?? '', email ?? '', password ?? '', loginState, userSettings, allUsers)),
     ),
     shareReplay(1),
   );
@@ -142,14 +205,14 @@ export class FirebaseService {
     this.nextState('out');
   }
 
-  private getPath(path: string) {
-    return `users/${this.uuid}/${path}`;
+  private getPath(path: string, uid?: string) {
+    return `users/${uid || this.uuid}/${path}`;
   }
 
   private async initSchema() {
     // Is there a better pattern for this?
     const path = this.getPath(this.totalsPath);
-    const totalsRef = await doc(this.firestore!, path);
+    const totalsRef = doc(this.firestore!, path);
     const totalsSnapshot = await getDoc(totalsRef); ///
     if (!totalsSnapshot.exists()) {
       await setDoc(totalsRef, {created: Date.now(), cost: 0});
@@ -191,15 +254,6 @@ export class FirebaseService {
     return config as Config;
   }
 
-  async setConversation(id: string, conversation: any) {
-    if (this.loginState.value != 'success') {
-      return;
-    }
-    const docRef = await doc(this.firestore!, this.getPath(`${this.conversationCollection}/${id}`));
-    conversation = removeUndefined(conversation);
-    await setDoc(docRef, {conversation});
-  }
-
   async mergePrerecordings(recordings: Recording[]) {
     if (this.loginState.value != 'success') {
       return;
@@ -228,8 +282,8 @@ export class FirebaseService {
     await Promise.all(promises);
   }
 
-  private async getDocs(relativePath: string, limit_?: number) {
-    const path = this.getPath(relativePath);
+  private async getDocs(relativePath: string, limit_?: number, uid?: string) {
+    const path = this.getPath(relativePath, uid);
     const coll = collection(this.firestore!, path);
     const snap = await getDocs(
       limit_ ? query(coll, limit(limit_)) : coll);
@@ -253,12 +307,16 @@ export class FirebaseService {
   }
 
   private async loadUserSettings() {
-    const settings = await getDoc(await doc(this.firestore!, `users/${this.uuid}`));
-    this.userSettings.next(settings.data() as UserSettings);
+    const allUsers: AllUsers = new Map();
+    (await getDocs(collection(this.firestore!, 'users'))).forEach(user => {
+      allUsers.set(user.id, {id: user.id, ...user.data()});
+    });
+    this.userSettings.next(allUsers.get(this.uuid!) as UserSettings);
+    this.allUsers.next(allUsers);
   }
 
   async updateUserSettings(displayName?: string) {
-    const ref = await doc(this.firestore!, `users/${this.uuid}`);
+    const ref = doc(this.firestore!, `users/${this.uuid}`);
     const userSettings = {...this.userSettings.value};
     if (typeof displayName !== 'undefined') {
       userSettings.displayName = displayName;
@@ -266,10 +324,149 @@ export class FirebaseService {
     await setDoc(ref, userSettings);
   }
 
-  async loadConversations(limit_?: number): Promise<CompletedConversation[]> {
-    return (await this.getDocs(this.conversationCollection, limit_)).map(doc => {
-      return doc.data()['conversation'] as CompletedConversation;
+  async setConversation(id: number, conversation: CompletedConversation) {
+    if (this.loginState.value != 'success') {
+      return;
+    }
+    const docRef = doc(this.firestore!, this.getPath(`${this.conversationCollection}/${id}`));
+    conversation = removeUndefined(conversation);
+    const data: Conversation = {conversation};
+    await setDoc(docRef, data);
+    await this.setSummary(this.uuid!, id, this.summarize(false, conversation));
+  }
+
+  private async moveConversation(uid: string, id: number, oldCollection: string, newCollection: string) {
+    const oldPath = this.getPath(`${oldCollection}/${id}`, uid);
+    const newPath = this.getPath(`${newCollection}/${id}`, uid);
+    const oldRef = doc(this.firestore!, oldPath);
+    const newRef = doc(this.firestore!, newPath);
+    runTransaction(this.firestore!, async (transaction: Transaction) => {
+      const oldDoc = await transaction.get(oldRef);
+      if (!oldDoc.exists()) throw new Error(`Document ${oldPath} does not exist.`);
+      transaction.set(newRef, oldDoc.data());
+      transaction.delete(oldRef);
     });
+    const summaries = await this.loadSummaries(uid);
+    const key = makeConversationKey(uid, id)
+    const archived = newCollection === this.archiveCollection;
+    summaries.set(key, {...summaries.get(key)!, archived});
+    await this.saveSummaries(uid, summaries);
+  }
+
+  async archiveConversation(uid: string, id: number) {
+    await this.moveConversation(
+      uid, id, this.conversationCollection, this.archiveCollection
+    );
+  }
+
+  async unarchiveConversation(uid: string, id: number) {
+    await this.moveConversation(
+      uid, id, this.archiveCollection, this.conversationCollection
+    );
+  }
+
+  async loadConversation(uid: string, id: number): Promise<CompletedConversation> {
+    for (const coll of [this.conversationCollection, this.archiveCollection]) {
+      const path = this.getPath(`${coll}/${id}`, uid);
+      const ref = doc(this.firestore!, path);
+      const snap = await getDoc(ref);
+      if (snap.exists() && snap.data()) {
+        const conversation = snap.data() as Conversation;
+        return conversation.conversation;
+      }
+    }
+    throw new Error(`Could not find conversation ${uid}/${id}`);
+  }
+
+  async loadConversations(uid: string, archived: boolean = false, limit_?: number): Promise<Map<ConversationKey, CompletedConversation>> {
+    return new Map((await this.getDocs(
+      archived ? this.archiveCollection : this.conversationCollection, limit_, uid
+    )).map(doc => {
+      const conversation = doc.data() as Conversation;
+      return [
+        makeConversationKey(uid, parseInt(doc.id)),
+        conversation.conversation,
+      ];
+    }));
+  }
+
+  private summarize(archived: boolean, conv: CompletedConversation): ConversationSummary {
+    const date = new Date(conv[0].id);
+    const secs = (conv[conv.length - 1].id - conv[0].id) / 1000;
+    const minutes = Math.round(secs / 6) / 10;
+    const countWords = (messages: CompletedConversation) => messages.map(
+       message => (message.text || '').match(/\w+/g)?.length || 0
+    ).reduce((prev, cur) => prev + cur, 0);
+    const liarConv = conv.filter((message) =>
+        message.role === 'assistant');
+    const messages = conv.length;
+    const words = countWords(conv);
+    const deliarMessages = liarConv.length;
+    const deliarWords = countWords(liarConv);
+    return {archived, date, minutes, messages, words, deliarMessages, deliarWords};
+  }
+
+  private async saveSummaries(uid: string, summaries: Map<ConversationKey, ConversationSummary>) {
+    const path = this.getPath(`${this.summariesCollection}/0`, uid);
+    const ref = doc(this.firestore!, path);
+    await setDoc(ref, {
+      summaries: mapToObject(removeUidFromKey(summaries)),
+      version: SUMMARIES_VERSION,
+    });
+  }
+
+  async loadSummaries(uid: string, regenerate: boolean = false): Promise<Map<ConversationKey, ConversationSummary>> {
+    const path = this.getPath(`${this.summariesCollection}/0`, uid);
+    const ref = doc(this.firestore!, path);
+    if (regenerate) {
+      console.log('regenerating summaries', uid);
+      const summaries = new Map([
+        ...(await this.loadConversations(uid, false)).entries()
+      ].map(([key, conversation]) => ([key, this.summarize(false, conversation)])));
+      const archived = new Map([
+        ...(await this.loadConversations(uid, true)).entries()
+      ].map(([key, conversation]) => ([key, this.summarize(true, conversation)])));
+      const combined = new Map([...archived.entries(), ...summaries.entries()]);
+      await this.saveSummaries(uid, combined);
+      return combined;
+    } else {
+      const snap = await getDoc(ref);
+      const data = snap.data();
+      if (data && data['summaries'] && data['version'] === SUMMARIES_VERSION) {
+        // `Date` is serialized as `Timestamp`.
+        for (const k of Object.keys(data['summaries'])) {
+          data['summaries'][k]['date'] = data['summaries'][k]['date'].toDate();
+        }
+        return addUidToKey(uid, objectToMap(data['summaries']) as Map<number, ConversationSummary>);
+      }
+      return this.loadSummaries(uid, true);
+    }
+  }
+
+  async setSummary(uid: string, id: number, summary: ConversationSummary): Promise<Map<ConversationKey, ConversationSummary>> {
+    const summaries = await this.loadSummaries(uid);
+    summaries.set(makeConversationKey(uid, id), summary);
+    await this.saveSummaries(uid, summaries);
+    return summaries;
+  }
+
+  async loadNotes(uid: string): Promise<Map<ConversationKey, ConversationNotes>> {
+    const path = this.getPath(`${this.notesCollection}/0`, uid);
+    const ref = doc(this.firestore!, path);
+    const snap = await getDoc(ref);
+    const data = snap.data();
+    if (data && data['notes']) {
+      return addUidToKey(uid, objectToMap(data['notes']) as Map<number, ConversationNotes>);
+    }
+    return new Map();
+  }
+
+  async setNote(uid: string, id: number, note: ConversationNotes) {
+    const path = this.getPath(`${this.notesCollection}/0`, uid);
+    const ref = doc(this.firestore!, path);
+    const notes = await this.loadNotes(uid);
+    notes.set(makeConversationKey(uid, id), note);
+    await setDoc(ref, {notes: mapToObject(removeUidFromKey(notes))});
   }
 
   private firestoreInit(settings: FirebaseSettings) {
@@ -346,6 +543,7 @@ export class FirebaseService {
     password: string,
     loginState: LoginState,
     userSettings: UserSettings,
+    allUsers: AllUsers | null,
   ): Promise<FirebaseState> {
 
     const settings: FirebaseSettings = {apiKey, appId, projectId, email, password};
@@ -377,6 +575,7 @@ export class FirebaseService {
       settings,
       loginState,
       userSettings,
+      allUsers,
     };
   }
 }

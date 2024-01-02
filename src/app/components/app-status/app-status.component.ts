@@ -30,6 +30,7 @@ export class AppStatusComponent {
         component: FirebaseExplorerComponent,
         title: 'Firebase Explorer',
         subtitle: 'Explore data in firestore database.',
+        classNames: ['fullscreen'],
         canDismiss: true,
       });
     }

@@ -105,7 +105,7 @@ export class ConversationService {
     null
   );
   latestOngoingSubject = new BehaviorSubject<OngoingConversationMessage | null>(null);
-  conversationId = Date.now().toString();
+  conversationId = Date.now();
   private ongoingConversations: OngoingConversationRecognition[] = [];
   pushed = new Subject<void>();
 
@@ -131,9 +131,10 @@ export class ConversationService {
 
     this.messages$.subscribe((messages) => {
       if (messages.length > 1) {
-        firebase.setConversation(this.conversationId, messages.filter(message => message.completed));
+        const conversation = messages.filter(message => message.completed) as CompletedConversation;
+        firebase.setConversation(this.conversationId, conversation);
       } else {
-        this.conversationId = Date.now().toString();
+        this.conversationId = Date.now();
       }
     });
 

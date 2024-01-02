@@ -1,39 +1,144 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ModalHandle, ModalInstance } from '../../modules/modal/modal.service';
-import { FirebaseService } from 'src/app/states/firebase.service';
-import { Subject } from 'rxjs';
-import { CompletedConversation } from 'src/app/states/conversation.service';
+import { ConversationKey, ConversationSummary, makeConversationKey } from 'src/app/states/firebase.service';
+import { ConversationRole } from 'src/app/states/conversation.service';
+import { FirebaseExplorerService, FirebaseExplorerState } from 'src/app/firebase-explorer.service';
+import { faEyeSlash, faLink, faPen, faSpinner, faStar as faSolidStar, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faStar } from '@fortawesome/free-regular-svg-icons';
+
+const COLORS = ['red', 'amber', 'lime', 'emerald', 'cyan', 'blue', 'violet', 'fuchsia'];
+const SYSTEM_ELLIPSIS_LENGTH = 30;
 
 @Component({
   selector: 'app-firebase-explorer',
   templateUrl: './firebase-explorer.component.html',
-  styleUrls: ['./firebase-explorer.component.scss']
+  styleUrls: ['./firebase-explorer.component.scss'],
 })
 export class FirebaseExplorerComponent implements ModalInstance<void> {
   modal!: ModalHandle<void>;
 
-  private conversations = new Subject<CompletedConversation[]>();
-  conversations$ = this.conversations.asObservable();
+  @ViewChild('titleEdit') titleInputRef?: ElementRef;
+  needsFocus: boolean = false;
+
+  spinnerIcon = faSpinner;
+  starIcon = faStar;
+  solidStarIcon = faSolidStar;
+  eyeSlashIcon = faEyeSlash;
+  eyeIcon = faEye;
+  penIcon = faPen;
+  linkIcon = faLink;
+
+  state$ = this.explorer.state$;
+
+  private expanded = new Set<ConversationKey>();
+  private editingTitle: ConversationKey | null = null;;
 
   constructor(
-    private firebase: FirebaseService,
-  ) {
-    console.log('FirebaseExplorerComponent.constructor');
-    this.setup();
+    private explorer: FirebaseExplorerService,
+  ) {}
+
+  ngAfterViewChecked() {
+    if (this.needsFocus) {
+      this.titleInputRef?.nativeElement?.focus();
+      (this.titleInputRef?.nativeElement as HTMLInputElement).select();
+      this.needsFocus = false;
+    }
   }
 
-  async setup() {
-    const conversations = await this.firebase.loadConversations(30);
-    this.conversations.next(conversations);
+  toggleUser(id: string) { this.explorer.toggleUser(id); }
+  userColors = new Map<string, string>();
+  getClassesForTailwindJit() { return ['cursor-pointer', 'gray', ...COLORS].map(color => `bg-${color}-400`); }
+  getColor(showing: Set<string>, id: string, alwaysColored: boolean = false) {
+    if (!alwaysColored && !showing.has(id)) return 'bg-gray-200';
+    if (!this.userColors.has(id)) {
+      const color = COLORS[this.userColors.size % COLORS.length];
+      this.userColors.set(id, `bg-${color}-400`);
+    }
+    return this.userColors.get(id);
+  }
+  toggleShowArchived() {
+    this.explorer.toggleShowArchived();
+  }
+  toggleShowStarred() {
+    this.explorer.toggleShowStarred();
   }
 
-  title(conv: CompletedConversation) {
-    const len = conv.length;
-    const d = new Date(conv[0].id);
-    const secs = (conv[conv.length - 1].id - conv[0].id) / 1000;
-    const minutes = Math.round(secs / 6) / 10;
-    const date = d.toDateString();
-    const time = d.toTimeString().split(' ')[0];
-    return `${date} ${time} – ${len} messages - ${minutes} minutes`;
+  countConversations(state: FirebaseExplorerState) {
+    return state.conversations.filter(
+      conv =>
+        (state.showArchived || !conv.summary?.archived) &&
+        (!state.showStarred || !conv.notes?.starred)
+    ).length;
+  }
+
+  getName(users: {id: string, name: string}[], uid: string) {
+    return users.filter(u => u.id === uid)[0].name;
+  }
+  toggleEditTitle(event: MouseEvent | null, uid: string, id: number) {
+    event?.stopPropagation();
+    const key = makeConversationKey(uid, id);
+    if (this.editingTitle === key) {
+      this.editingTitle = null;
+    } else {
+      this.editingTitle = key;
+      this.needsFocus = true;
+    }
+  }
+  isEditingTitle(uid: string, id: number) {
+    return this.editingTitle === makeConversationKey(uid, id);
+  }
+  async titleKeyDown(event: KeyboardEvent, uid: string, id: number) {
+    if (event.key === 'Enter') {
+      const target = event.target as HTMLInputElement;
+      await this.explorer.setTitle(uid, id, target.value);
+      this.toggleEditTitle(null, uid, id);
+      event.stopPropagation();
+    }
+    if (event.key === 'Escape') {
+      this.toggleEditTitle(null, uid, id);
+      event.stopPropagation();
+    }
+  }
+  toggleConversation(uid: string, id: number) {
+    this.explorer.toggleConversation(uid, id);
+  }
+  toggleStar(event: MouseEvent, uid: string, id: number) {
+    event.stopPropagation();
+    this.explorer.toggleStar(uid, id);
+  }
+  toggleConversationArchived(event: MouseEvent, uid: string, id: number) {
+    event.stopPropagation();
+    this.explorer.toggleConversationArchived(uid, id);
+  }
+  fmtSummary1(summary: ConversationSummary) {
+    return `${summary.date.toLocaleDateString()} ${summary.date.toLocaleTimeString()} – ${Math.round(10 * summary.minutes) / 10} minutes`
+  }
+  fmtSummary2(summary: ConversationSummary) {
+return `${summary.messages} messages / ${summary.words} words (Deliar ${summary.deliarMessages}/${summary.deliarWords})`;
+  }
+  isExpanded(uid: string, id: number) {
+    return this.expanded.has(makeConversationKey(uid, id));
+  }
+  toggleExpanded(uid: string, id: number) {
+    if (this.expanded.has(makeConversationKey(uid, id))) {
+      this.expanded.delete(makeConversationKey(uid, id))
+    } else {
+      this.expanded.add(makeConversationKey(uid, id))
+    }
+  }
+  ellipsis(message: string) {
+    const words = message.split(' ');
+    if (words.length <= SYSTEM_ELLIPSIS_LENGTH) return message;
+    return words.slice(0, 30).join(' ') + '...';
+  }
+  isEllipsable(message: string) {
+    return message.split(' ').length > SYSTEM_ELLIPSIS_LENGTH;
+  }
+  fmtRole(role: ConversationRole) {
+    return {
+      'assistant': 'Deliar',
+      'user': 'Human',
+      'system': 'System',
+    }[role];
   }
 }

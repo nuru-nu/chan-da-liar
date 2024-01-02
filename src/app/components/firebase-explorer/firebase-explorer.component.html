@@ -1,9 +1,133 @@
-<div *ngIf="conversations$ | async as conversations">
-
-  <div
-  *ngFor="let conv of conversations"
+<div
+  *ngIf="state$ | async as state"
+  class="p-6"
   >
-    {{title(conv)}}
+
+  <!-- https://play.tailwindcss.com/LEjnYwsgRI -->
+
+  <div style="display:none;" [ngClass]="getClassesForTailwindJit()"></div>
+
+  <div *ngIf="state.users" class="flex flex-col gap-3">
+
+    <div class="flex gap-3">
+      <div class="mr-6">Show conversations:</div>
+      <div *ngFor="let user of state.users"
+           [ngClass]="[
+              'cursor-pointer', 'rounded-xl', 'px-3',
+              getColor(state.showing, user.id),
+           ]"
+           data-id="{{user.id}}"
+           title="{{user.id.substring(0, 6) + '...'}}"
+           (click)="toggleUser(user.id)"
+           >{{user.name}}</div>
+      <div [ngClass]="[
+              'cursor-pointer', 'rounded-xl', 'px-3', 'ml-12',
+              state.showArchived ? 'bg-gray-400' : 'bg-gray-200'
+          ]"
+          (click)="toggleShowArchived()"
+          >Archived</div>
+      <div [ngClass]="[
+              'cursor-pointer', 'rounded-xl', 'px-3',
+              state.showStarred ? 'bg-yellow-400' : 'bg-gray-200'
+          ]"
+          (click)="toggleShowStarred()"
+          >Starred</div>
+      <div class="grow"></div>
+      <div *ngIf="state.busy" class="text-gray-900 flex gap-1">
+        <div class="animate-spin"><fa-icon [icon]="spinnerIcon"></fa-icon></div>
+        loading
+      </div>
   </div>
+
+  <div class="">
+    Showing {{countConversations(state)}} conversations.
+  </div>
+
+  <div class="flex flex-col gap-3"> <!-- conversations -->
+
+    <ng-container *ngFor="let c of state.conversations"> <!-- conversation -->
+      <div *ngIf="
+                  (state.showArchived || !c.summary!.archived) &&
+                  (!state.showStarred || c.notes?.starred)
+                 "
+           class="flex flex-col"
+         >
+        <div [ngClass]="[
+                'flex', 'gap-3', 'items-center', 'hover:bg-gray-200',
+                c.conversation ? 'cursor-zoom-out' : 'cursor-zoom-in',
+              ]"
+              (click)="toggleConversation(c.uid, c.id)"
+              > <!-- title -->
+          <div [ngClass]="[
+                    'cursor-pointer', 'rounded-xl', 'px-3',
+                    getColor(state.showing, c.uid, true)
+                ]">{{getName(state.users, c.uid)}}</div>
+          <div class="flex flex-col">
+            <div class="flex gap-3">
+              <div *ngIf="!isEditingTitle(c.uid, c.id)"
+                   class="cursor-pointer"
+                   (click)="toggleEditTitle($event, c.uid, c.id)"
+                   >
+                {{c.notes?.title || 'Untitled Conversation'}}
+              </div>
+              <div *ngIf="isEditingTitle(c.uid, c.id)"
+                   class="cursor-pointer"
+                   >
+                <input type="text"
+                       #titleEdit
+                       placeholder="{{c.notes?.title || 'Untitled Conversation'}}"
+                       class="border-b border-gray-900 bg-transparent outline-none"
+                       value="{{c.notes?.title || ''}}"
+                       (keydown)="titleKeyDown($event, c.uid, c.id)"
+                       (click)="$event.stopPropagation()"
+                       >
+              </div>
+              <fa-icon [icon]="c.notes?.starred ? solidStarIcon : starIcon"
+                      class="cursor-pointer text-gray-400 hover:text-gray-900" 
+                      title="mark as awesome"
+                      (click)="toggleStar($event, c.uid, c.id)"
+                      ></fa-icon>
+              <fa-icon [icon]="c.summary?.archived ? eyeSlashIcon : eyeIcon"
+                      class="cursor-pointer text-gray-400 hover:text-gray-900"
+                      title="{{c.summary?.archived ? 'unarchive' : 'archive'}}"
+                      (click)="toggleConversationArchived($event, c.uid, c.id)"
+              ></fa-icon>
+              <!--
+              <i class="fa-solid fa-pen cursor-pointer text-gray-400 hover:text-gray-900" title="modify"></i>
+              <i class="fa-solid fa-link cursor-pointer text-gray-400 hover:text-gray-900" title="copy link"></i>
+              -->
+            </div>
+            <div class="text-xs" *ngIf="c.summary">
+              {{ fmtSummary1(c.summary!) }}
+            </div>
+            <div class="text-xs" *ngIf="c.summary">
+              {{ fmtSummary2(c.summary!) }}
+            </div>
+          </div>
+        </div> <!-- title -->
+        <div class="flex flex-col gap-1 p-3" *ngIf="c.conversation">
+          <div *ngFor="let cc of c.conversation">
+            <div *ngIf="cc.role === 'system'">
+              <span class="text-xs">{{ fmtRole(cc.role) }}:</span>
+              <span *ngIf="!isEllipsable(cc.text)">
+                {{ cc.text }}
+              </span>
+              <span *ngIf="isEllipsable(cc.text)">
+                {{ isExpanded(c.uid, c.id) ? cc.text : ellipsis(cc.text) }}
+                <span class="cursor-pointer text-xs"
+                      (click)="toggleExpanded(c.uid, c.id)">({{ isExpanded(c.uid, c.id) ? 'collapse' : 'expand' }})</span>
+              </span>
+            </div>
+            <div *ngIf="cc.role !== 'system'"
+                [ngClass]="cc.role === 'assistant' ? 'pl-6' : 'pr-6'">
+              <span class="text-xs">{{ fmtRole(cc.role) }}:&nbsp;</span>
+              <span [ngClass]="cc.decision === 'skip' ? 'line-through' : ''">{{ cc.text }}</span>
+            </div>
+          </div>
+        </div>
+      </div>  <!-- conversation -->
+    </ng-container>  <!-- if(archived/starred) -->
+
+  </div> <!-- conversations -->
 
 </div>
