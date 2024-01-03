@@ -1,0 +1,4 @@
+
+DEPLOY_USER=smanmi
+DEPLOY_SERVER=nuru.nu
+DEPLOY_BASE=/var/www/nuru

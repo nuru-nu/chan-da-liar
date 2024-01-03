@@ -12,6 +12,14 @@ npm install
 npm start
 ```
 
+## Deployment
+
+1. Run `cp deployment_settings.sh.example deployment_settings.sh`
+2. Edit `deployment_settings.sh`
+3. Run `npm run build`
+4. Run `npm run stage` and verify local build at http://localhost:8888
+5. Run `npm run deploy`
+
 ## Configuration
 
 ### Devices

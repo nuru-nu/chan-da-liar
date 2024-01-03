@@ -43,3 +43,6 @@ Thumbs.db
 
 # Credentials
 *-firebase-adminsdk-*.json
+
+# Deployment settings
+/deployment_settings.sh
