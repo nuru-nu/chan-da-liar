@@ -6,7 +6,7 @@
     "start": "ng serve",
     "server": "node light-controller-server.js",
     "build": "ng build -c production --base-href /chan-da-liar/",
-    "stage": "cd dist && python3 -m http.server 8888",
+    "stage": "cd dist && python3 -m http.server 4200",
     "deploy": ". ./deployment_settings.sh && rsync -avz ./dist/chan-da-liar/ $DEPLOY_USER@$DEPLOY_SERVER:$DEPLOY_BASE/chan-da-liar",
     "format": "prettier -w src"
   },

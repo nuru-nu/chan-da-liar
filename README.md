@@ -17,7 +17,7 @@ npm start
 1. Run `cp deployment_settings.sh.example deployment_settings.sh`
 2. Edit `deployment_settings.sh`
 3. Run `npm run build`
-4. Run `npm run stage` and verify local build at http://localhost:8888
+4. Run `npm run stage` and verify local build at http://localhost:4200/chan-da-liar
 5. Run `npm run deploy`
 
 ## Configuration
