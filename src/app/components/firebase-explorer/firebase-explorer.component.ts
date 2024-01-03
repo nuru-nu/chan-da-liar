@@ -67,7 +67,7 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
     return state.conversations.filter(
       conv =>
         (state.showArchived || !conv.summary?.archived) &&
-        (!state.showStarred || !conv.notes?.starred)
+        (!state.showStarred || conv.notes?.starred)
     ).length;
   }
 
