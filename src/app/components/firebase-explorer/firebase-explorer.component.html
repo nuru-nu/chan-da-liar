@@ -5,11 +5,9 @@
 
   <!-- https://play.tailwindcss.com/LEjnYwsgRI -->
 
-  <div style="display:none;" [ngClass]="getClassesForTailwindJit()"></div>
-
   <div *ngIf="state.users" class="flex flex-col gap-3">
 
-    <div class="flex gap-3">
+    <div class="flex flex-wrap gap-3">
       <div class="mr-6">Show conversations:</div>
       <div *ngFor="let user of state.users"
            [ngClass]="[

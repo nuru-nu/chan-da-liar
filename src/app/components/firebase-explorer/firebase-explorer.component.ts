@@ -6,7 +6,7 @@ import { FirebaseExplorerService, FirebaseExplorerState } from 'src/app/firebase
 import { faEyeSlash, faLink, faPen, faSpinner, faStar as faSolidStar, faEye } from '@fortawesome/free-solid-svg-icons';
 import { faStar } from '@fortawesome/free-regular-svg-icons';
 
-const COLORS = ['red', 'amber', 'lime', 'emerald', 'cyan', 'blue', 'violet', 'fuchsia'];
+const COLORS_N = 6;
 const SYSTEM_ELLIPSIS_LENGTH = 30;
 
 @Component({
@@ -47,12 +47,11 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
 
   toggleUser(id: string) { this.explorer.toggleUser(id); }
   userColors = new Map<string, string>();
-  getClassesForTailwindJit() { return ['cursor-pointer', 'gray', ...COLORS].map(color => `bg-${color}-400`); }
   getColor(showing: Set<string>, id: string, alwaysColored: boolean = false) {
     if (!alwaysColored && !showing.has(id)) return 'bg-gray-200';
     if (!this.userColors.has(id)) {
-      const color = COLORS[this.userColors.size % COLORS.length];
-      this.userColors.set(id, `bg-${color}-400`);
+      const color = `color${this.userColors.size % COLORS_N}`;
+      this.userColors.set(id, color);
     }
     return this.userColors.get(id);
   }
