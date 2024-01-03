@@ -109,15 +109,6 @@ Everything to be spoken goes first in the output queue.
 There it will be played in order of submitting and waits for earlier items to processed first.
 Once processed they disapear, items in the queue can be deleted if not already in execution.
 
-
-### Roadmap
-
-- [ ] Spoken text gets picked up from microphone and ends up in the input. Pause microphones on play may help or if the speak recognization detects the speaker voice.
-- [ ] Improve OpenAI conversation
-  - [ ] Role play prompt currently ignored
-  - [ ] visualize current conversation
-  - [ ] reset for conversation / clear single items
-
 ## Code overview
 
 Code is seperated into two main directories.
