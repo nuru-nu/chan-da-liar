@@ -1,5 +1,5 @@
 <div class="flex justify-between px-3 py-1">
-  <span class="text-gray-400 text-xs">Transcript ({{ selectedModel }})</span>
+  <span class="text-gray-400 text-xs">Transcript ({{ (settings$ | async)?.model }})</span>
   <button class="text-xs text-black text-right w-12" (click)="clear()">
     Clear
   </button>

@@ -111,10 +111,11 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
     this.explorer.toggleConversationArchived(uid, id);
   }
   fmtSummary1(summary: ConversationSummary) {
-    return `${summary.date.toLocaleDateString()} ${summary.date.toLocaleTimeString()} – ${Math.round(10 * summary.minutes) / 10} minutes`
+    const date = new Date(summary.date);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()} – ${Math.round(10 * summary.minutes) / 10} minutes`
   }
   fmtSummary2(summary: ConversationSummary) {
-return `${summary.messages} messages / ${summary.words} words (Deliar ${summary.deliarMessages}/${summary.deliarWords})`;
+    return `${summary.settings?.model || '?'} – ${summary.messages} messages / ${summary.words} words (Deliar ${summary.deliarMessages}/${summary.deliarWords})`;
   }
   isExpanded(uid: string, id: number) {
     return this.expanded.has(makeConversationKey(uid, id));

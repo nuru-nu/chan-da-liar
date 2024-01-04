@@ -55,6 +55,9 @@ export type ConversationMessage =
   | OngoingConversationMessage
   | CompletedConversationMessage;
 
+export interface ConversationSettings {
+  model: string|null;
+}
 
 class MessageBuilder {
   private message: CompletedConversationMessage;
@@ -116,6 +119,9 @@ export class ConversationService {
   private ongoingConversations: OngoingConversationRecognition[] = [];
   pushed = new Subject<void>();
 
+  settings = new BehaviorSubject<ConversationSettings>({model: null});
+  settings$ = this.settings.asObservable();
+
   messages$ = this.messagesSubject.asObservable();
   promptMessages$ = this.messages$.pipe(
     map(messages => this.getPromptMessages(messages)));
@@ -134,12 +140,16 @@ export class ConversationService {
   ) {
     this.openAI.state$.subscribe((state) => {
       this.clear(state);
+      this.settings.next({
+        ...this.settings.value,
+        model: state.selectedModel?.id || null,
+      });
     });
 
     this.messages$.subscribe((messages) => {
       if (messages.length > 1) {
         const conversation = messages.filter(message => message.completed) as CompletedConversation;
-        firebase.setConversation(this.conversationId, conversation);
+        firebase.setConversation(this.conversationId, this.settings.value, conversation);
       } else {
         this.conversationId = Date.now();
       }

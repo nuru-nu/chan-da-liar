@@ -23,7 +23,7 @@ import {
 } from 'firebase/firestore/lite';
 import { User, browserLocalPersistence, getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { Recording } from "./prerecording.service";
-import { CompletedConversation } from './conversation.service';
+import { CompletedConversation, ConversationSettings } from './conversation.service';
 
 const DEFAULT_API_KEY = 'AIzaSyCbsk8PYE8siL58giIaDG1BjXLmtNWPjSY';
 const DEFAULT_APP_ID = '1:949850774703:web:67bc87b614929fed3a085a';
@@ -88,11 +88,12 @@ function objectToMap<T>(obj: { [key: string]: T }): Map<number, T> {
   return new Map<number, T>([...Object.entries(obj)].map(([k, v]) => [parseInt(k), v]));
 }
 
-const SUMMARIES_VERSION = 1;
+const SUMMARIES_VERSION = 3;
 // users/{uid}/summaries/0
 export interface ConversationSummary {
+  settings?: ConversationSettings;
   archived: boolean;
-  date: Date;
+  date: number;
   minutes: number;
   messages: number;
   words: number;
@@ -109,6 +110,7 @@ export interface ConversationNotes {
 // users/{uid}/conversation/{id}
 // users/{uid}/archived/{id}
 interface Conversation {
+  settings: ConversationSettings;
   conversation: CompletedConversation;
 }
 
@@ -324,15 +326,15 @@ export class FirebaseService {
     await setDoc(ref, userSettings);
   }
 
-  async setConversation(id: number, conversation: CompletedConversation) {
+  async setConversation(id: number, settings: ConversationSettings, conversation: CompletedConversation) {
     if (this.loginState.value != 'success') {
       return;
     }
     const docRef = doc(this.firestore!, this.getPath(`${this.conversationCollection}/${id}`));
     conversation = removeUndefined(conversation);
-    const data: Conversation = {conversation};
+    const data: Conversation = {settings, conversation};
     await setDoc(docRef, data);
-    await this.setSummary(this.uuid!, id, this.summarize(false, conversation));
+    await this.setSummary(this.uuid!, id, this.summarize(false, data));
   }
 
   private async moveConversation(uid: string, id: number, oldCollection: string, newCollection: string) {
@@ -365,33 +367,44 @@ export class FirebaseService {
     );
   }
 
-  async loadConversation(uid: string, id: number): Promise<CompletedConversation> {
+  async loadConversationWithSettings(uid: string, id: number): Promise<Conversation> {
     for (const coll of [this.conversationCollection, this.archiveCollection]) {
       const path = this.getPath(`${coll}/${id}`, uid);
       const ref = doc(this.firestore!, path);
       const snap = await getDoc(ref);
       if (snap.exists() && snap.data()) {
-        const conversation = snap.data() as Conversation;
-        return conversation.conversation;
+        return snap.data() as Conversation;
       }
     }
     throw new Error(`Could not find conversation ${uid}/${id}`);
   }
 
-  async loadConversations(uid: string, archived: boolean = false, limit_?: number): Promise<Map<ConversationKey, CompletedConversation>> {
+  async loadConversation(uid: string, id: number): Promise<CompletedConversation> {
+    return (await this.loadConversationWithSettings(uid, id)).conversation;
+  }
+
+  async loadConversationsWithSettings(uid: string, archived: boolean = false, limit_?: number): Promise<Map<ConversationKey, Conversation>> {
     return new Map((await this.getDocs(
       archived ? this.archiveCollection : this.conversationCollection, limit_, uid
     )).map(doc => {
       const conversation = doc.data() as Conversation;
       return [
         makeConversationKey(uid, parseInt(doc.id)),
-        conversation.conversation,
+        conversation,
       ];
     }));
   }
 
-  private summarize(archived: boolean, conv: CompletedConversation): ConversationSummary {
-    const date = new Date(conv[0].id);
+  async loadConversations(uid: string, archived: boolean = false, limit_?: number): Promise<Map<ConversationKey, CompletedConversation>> {
+    return new Map([...(
+      await this.loadConversationsWithSettings(uid, archived, limit_)
+    ).entries()].map(([key, value]) => [key, value.conversation]));
+  }
+
+  private summarize(archived: boolean, conversation: Conversation): ConversationSummary {
+    const conv = conversation.conversation;
+    const settings = conversation.settings;
+    const date = conv[0].id;
     const secs = (conv[conv.length - 1].id - conv[0].id) / 1000;
     const minutes = Math.round(secs / 6) / 10;
     const countWords = (messages: CompletedConversation) => messages.map(
@@ -403,14 +416,14 @@ export class FirebaseService {
     const words = countWords(conv);
     const deliarMessages = liarConv.length;
     const deliarWords = countWords(liarConv);
-    return {archived, date, minutes, messages, words, deliarMessages, deliarWords};
+    return {settings, archived, date, minutes, messages, words, deliarMessages, deliarWords};
   }
 
   private async saveSummaries(uid: string, summaries: Map<ConversationKey, ConversationSummary>) {
     const path = this.getPath(`${this.summariesCollection}/0`, uid);
     const ref = doc(this.firestore!, path);
     await setDoc(ref, {
-      summaries: mapToObject(removeUidFromKey(summaries)),
+      summaries: removeUndefined(mapToObject(removeUidFromKey(summaries))),
       version: SUMMARIES_VERSION,
     });
   }
@@ -421,10 +434,10 @@ export class FirebaseService {
     if (regenerate) {
       console.log('regenerating summaries', uid);
       const summaries = new Map([
-        ...(await this.loadConversations(uid, false)).entries()
+        ...(await this.loadConversationsWithSettings(uid, false)).entries()
       ].map(([key, conversation]) => ([key, this.summarize(false, conversation)])));
       const archived = new Map([
-        ...(await this.loadConversations(uid, true)).entries()
+        ...(await this.loadConversationsWithSettings(uid, true)).entries()
       ].map(([key, conversation]) => ([key, this.summarize(true, conversation)])));
       const combined = new Map([...archived.entries(), ...summaries.entries()]);
       await this.saveSummaries(uid, combined);
@@ -433,10 +446,6 @@ export class FirebaseService {
       const snap = await getDoc(ref);
       const data = snap.data();
       if (data && data['summaries'] && data['version'] === SUMMARIES_VERSION) {
-        // `Date` is serialized as `Timestamp`.
-        for (const k of Object.keys(data['summaries'])) {
-          data['summaries'][k]['date'] = data['summaries'][k]['date'].toDate();
-        }
         return addUidToKey(uid, objectToMap(data['summaries']) as Map<number, ConversationSummary>);
       }
       return this.loadSummaries(uid, true);

@@ -22,7 +22,6 @@ import {
 import { combineLatest, interval } from 'rxjs';
 import { PrerecordingService } from 'src/app/states/prerecording.service';
 import { AppService } from 'src/app/states/app.service';
-import { OpenAiService } from 'src/app/states/open-ai.service';
 import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
 
 @Component({
@@ -48,10 +47,10 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   @ViewChild('messagelist')
   messageList?: ElementRef<HTMLDivElement>;
 
+  settings$ = this.conversation.settings$;
   messages$ = this.conversation.messages$;
   expanded = false;
   developer = false;
-  selectedModel = '?';
 
   editing: number|null = null;
   needsfocus = false;
@@ -60,14 +59,10 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
     private speaker: SpeakerService,
     private conversation: ConversationService,
     private prerecordings: PrerecordingService,
-    openai: OpenAiService,
     app: AppService,
   ) {
     app.state$.subscribe(state => {
       this.developer = state.overrideMode;
-    });
-    openai.state$.subscribe(state => {
-      this.selectedModel = state.selectedModel?.id ?? '?';
     });
   }
 
