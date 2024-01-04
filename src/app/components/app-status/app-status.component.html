@@ -3,8 +3,8 @@
     loginState.value === 'success' ? 'cursor-pointer' : '',
 ]" (click)="openExplorer()">
 
-  <div class="text-lg">Cost: {{cost$ | async}} </div>
-  <div class="text-xs">~{{tokens$ | async}} tokens</div>
+  <div class="text-lg">History</div>
+  <div class="text-xs">~{{tokens$ | async}} tokens, $ {{cost$ | async}}</div>
 
   <div *ngIf="(loginState | async) == 'success'" class="flex text-xs space-x-1">
     <div>{{ (firebaseState | async)!.settings.email }}</div>
