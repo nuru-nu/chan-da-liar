@@ -5,3 +5,6 @@
 body {
   overscroll-behavior: none;
 }
+
+.diff-added { @apply italic; font-style: italic;  }
+.diff-removed { @apply line-through; text-decoration: line-through; }

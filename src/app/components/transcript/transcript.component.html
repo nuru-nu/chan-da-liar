@@ -33,9 +33,8 @@
         </div>
 
         <div
-            *ngIf="message.completed && message.id !== editing"
+            *ngIf="message.completed && message.role === 'system'"
             class="whitespace-pre-wrap"
-            (click)="edit($event)"
             >{{ displayMessage(message) }}
           <button
             (click)="toggleExpanded()"
@@ -43,6 +42,14 @@
             class="bg-indigo-100 m-1 rounded-md px-1 py-1 text-xs">
             {{ expanded ? 'Truncate' : 'Expand' }}
           </button>
+        </div>
+
+        <div
+            *ngIf="message.completed && message.role !== 'system' && message.id !== editing"
+            class="whitespace-pre-wrap"
+            (click)="edit($event)"
+            [innerHTML]="messageHtml(message)"
+            >
         </div>
 
         <div 
@@ -66,7 +73,7 @@
         </div>
 
         <div
-          *ngIf="message.completed && (message.queued || message.played)"
+*ngIf="message.completed && (message.queued || message.played)"
           class="icons-bottom">
           <span *ngIf="message.rate" class="bg-black text-white rounded-md text-xs px-2">{{message.rate}}x</span>
           <fa-icon [icon]="checkIcon" *ngIf="!message.played"></fa-icon>

@@ -119,7 +119,10 @@
             <div *ngIf="cc.role !== 'system'"
                 [ngClass]="cc.role === 'assistant' ? 'pl-6' : 'pr-6'">
               <span class="text-xs">{{ fmtRole(cc.role) }}:&nbsp;</span>
-              <span [ngClass]="cc.decision === 'skip' ? 'line-through' : ''">{{ cc.text }}</span>
+              <span *ngIf="!isEllipsable(cc.text)"
+                    [ngClass]="cc.decision === 'skip' ? 'line-through' : ''"
+                    [innerHTML]="messageHtml(cc)">
+              </span>
             </div>
           </div>
         </div>

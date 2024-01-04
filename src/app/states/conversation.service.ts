@@ -22,6 +22,9 @@ export interface CompletedConversationMessage {
   text: string;
   rate?: number;
 
+  // If different from final text (override -> originalText='').
+  originalText?: string;
+
   decision: Decision;
   highlight: boolean;
   queued: boolean;
@@ -88,6 +91,10 @@ class MessageBuilder {
   }
   yes(): MessageBuilder {
     this.message.decision = 'yes';
+    return this;
+  }
+  override(): MessageBuilder {
+    this.message.originalText = '';
     return this;
   }
   build(): CompletedConversationMessage {
@@ -247,6 +254,7 @@ export class ConversationService {
     const message = messages[index];
     if (!message.completed) throw new Error('Cannot only edit completed message');
     if (message.decision !== 'open') throw new Error('Can only edit "open" message');
+    if (!message.originalText) message.originalText = message.text;
     message.text = text;
     messages[index] = message;
     this.messagesSubject.next(messages);
@@ -257,7 +265,7 @@ export class ConversationService {
   }
 
   pushAssistant(recording: Recording) {
-    const newMessage = new MessageBuilder(recording.content, 'assistant').rate(recording.rate).build();
+    const newMessage = new MessageBuilder(recording.content, 'assistant').rate(recording.rate).override().build();
     const lastDecisionIndex = this.messagesSubject.value.findIndex(m => !m.completed || m.decision === 'open');
     if (lastDecisionIndex >= 0) {
       this.messagesSubject.value.splice(lastDecisionIndex, 0, newMessage);
@@ -269,7 +277,7 @@ export class ConversationService {
   }
 
   pushUser(recording: Recording) {
-    const newMessage = new MessageBuilder(recording.content, 'user').rate(recording.rate).build();
+    const newMessage = new MessageBuilder(recording.content, 'user').override().rate(recording.rate).build();
     this.messagesSubject.value.push(newMessage);
     this.nextMessages(this.messagesSubject.value);
     this.pushed.next();

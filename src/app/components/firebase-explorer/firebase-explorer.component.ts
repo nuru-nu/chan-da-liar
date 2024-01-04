@@ -1,10 +1,11 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ModalHandle, ModalInstance } from '../../modules/modal/modal.service';
 import { ConversationKey, ConversationSummary, makeConversationKey } from 'src/app/states/firebase.service';
-import { ConversationRole } from 'src/app/states/conversation.service';
+import { CompletedConversationMessage, ConversationRole } from 'src/app/states/conversation.service';
 import { FirebaseExplorerService, FirebaseExplorerState } from 'src/app/firebase-explorer.service';
 import { faEyeSlash, faLink, faPen, faSpinner, faStar as faSolidStar, faEye } from '@fortawesome/free-solid-svg-icons';
 import { faStar } from '@fortawesome/free-regular-svg-icons';
+import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
 
 const COLORS_N = 6;
 const SYSTEM_ELLIPSIS_LENGTH = 30;
@@ -139,5 +140,11 @@ return `${summary.messages} messages / ${summary.words} words (Deliar ${summary.
       'user': 'Human',
       'system': 'System',
     }[role];
+  }
+  messageHtml(message: CompletedConversationMessage) {
+    if ('undefined' === typeof message.originalText) {
+      return escapeHtml(message.text);
+    }
+    return generateHtmlDiff(message.originalText, message.text);
   }
 }

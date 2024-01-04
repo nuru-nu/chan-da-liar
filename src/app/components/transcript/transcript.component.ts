@@ -23,6 +23,7 @@ import { combineLatest, interval } from 'rxjs';
 import { PrerecordingService } from 'src/app/states/prerecording.service';
 import { AppService } from 'src/app/states/app.service';
 import { OpenAiService } from 'src/app/states/open-ai.service';
+import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
 
 @Component({
   selector: 'app-transcript',
@@ -112,6 +113,13 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
       return message.text.substring(0, 120) + '...';
     }
     return message.text;
+  }
+
+  messageHtml(message: CompletedConversationMessage) {
+    if ('undefined' === typeof message.originalText) {
+      return escapeHtml(message.text);
+    }
+    return generateHtmlDiff(message.originalText, message.text);
   }
 
   async savePrerecording(message: CompletedConversationMessage) {
