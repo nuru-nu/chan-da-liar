@@ -81,7 +81,7 @@ export class FirebaseExplorerService {
         conversationMap.get(key)!.notes = note;
       }
       const conversations = [...conversationMap.values()];
-      conversations.sort((a, b) => a.id - b.id);
+      conversations.sort((a, b) => b.id - a.id);
       this.conversations.next(conversations);
       this.busy.next(false);
     }
