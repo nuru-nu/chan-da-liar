@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ConversationNotes, ConversationSummary, FirebaseService, FirebaseState, makeConversationKey, parseConversationKey } from './states/firebase.service';
 import { BehaviorSubject, combineLatest, mergeMap, shareReplay } from 'rxjs';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
-import { CompletedConversation } from './states/conversation.service';
+import { CompletedConversation, ConversationService } from './states/conversation.service';
 
 interface Conversation {
     uid: string;
@@ -49,7 +49,10 @@ export class FirebaseExplorerService {
     shareReplay(1)
   );
 
-  constructor(private firebase: FirebaseService) {}
+  constructor(
+    private firebase: FirebaseService,
+    private conversation: ConversationService,
+  ) {}
 
   async toggleUser(uid: string) {
     const showing = new Set(this.showing.value);
@@ -109,6 +112,11 @@ export class FirebaseExplorerService {
       await this.firebase.setNote(uid, id, {...sel.notes, title});
       sel.notes.title = title;
     });
+  }
+
+  async loadConversation(uid: string, id: number) {
+    const conversation = await this.firebase.loadConversation(uid, id);
+    this.conversation.loadConveration(conversation);
   }
 
   async toggleStar(uid: string, id: number) {

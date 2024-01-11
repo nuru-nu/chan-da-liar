@@ -80,6 +80,11 @@
                        (click)="$event.stopPropagation()"
                        >
               </div>
+              <fa-icon [icon]="penIcon"
+                      class="cursor-pointer text-gray-400 hover:text-gray-900"
+                      title="duplicate conversation"
+                      (click)="loadConversation($event, c.uid, c.id)"
+              ></fa-icon>
               <fa-icon [icon]="c.notes?.starred ? solidStarIcon : starIcon"
                       class="cursor-pointer text-gray-400 hover:text-gray-900" 
                       title="mark as awesome"

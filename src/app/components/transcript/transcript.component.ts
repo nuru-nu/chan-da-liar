@@ -47,6 +47,7 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   @ViewChild('messagelist')
   messageList?: ElementRef<HTMLDivElement>;
 
+  conversationId$ = this.conversation.conversationId$;
   settings$ = this.conversation.settings$;
   messages$ = this.conversation.messages$;
   expanded = false;
@@ -97,6 +98,12 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
 
   clear() {
     this.conversation.clear();
+  }
+
+  formatCreated(conversationId: number|null) {
+    if (!conversationId) return '?';
+    const date = new Date(conversationId);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
   }
 
   toggleExpanded() {

@@ -102,6 +102,11 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
   toggleConversation(uid: string, id: number) {
     this.explorer.toggleConversation(uid, id);
   }
+  async loadConversation(event: MouseEvent, uid: string, id: number) {
+    event.stopPropagation();
+    await this.explorer.loadConversation(uid, id);
+    this.modal.dismiss();
+  }
   toggleStar(event: MouseEvent, uid: string, id: number) {
     event.stopPropagation();
     this.explorer.toggleStar(uid, id);

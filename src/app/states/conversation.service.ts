@@ -57,6 +57,7 @@ export type ConversationMessage =
 
 export interface ConversationSettings {
   model: string|null;
+  parent?: number;
 }
 
 class MessageBuilder {
@@ -115,7 +116,8 @@ export class ConversationService {
     null
   );
   latestOngoingSubject = new BehaviorSubject<OngoingConversationMessage | null>(null);
-  conversationId = Date.now();
+  private conversationIdSubject = new BehaviorSubject<number>(Date.now());
+  conversationId$ = this.conversationIdSubject.asObservable();
   private ongoingConversations: OngoingConversationRecognition[] = [];
   pushed = new Subject<void>();
 
@@ -149,9 +151,7 @@ export class ConversationService {
     this.messages$.subscribe((messages) => {
       if (messages.length > 1) {
         const conversation = messages.filter(message => message.completed) as CompletedConversation;
-        firebase.setConversation(this.conversationId, this.settings.value, conversation);
-      } else {
-        this.conversationId = Date.now();
+        firebase.setConversation(this.conversationIdSubject.value, this.settings.value, conversation);
       }
     });
 
@@ -221,6 +221,8 @@ export class ConversationService {
       state = await firstValueFrom(this.openAI.state$);
     }
 
+    this.setConversationId(Date.now());
+    this.settings.next({...this.settings.value, parent: 0})
     this.nextMessages(
       state.rolePlayScript ? [new MessageBuilder(state.rolePlayScript, 'system').yes().build()] : []
     );
@@ -239,6 +241,24 @@ export class ConversationService {
       }
     }
     return promptMessages;
+  }
+
+  private setConversationId(id: number) {
+    this.conversationIdSubject.next(id);
+    const messages = this.messagesSubject.value;
+    if (messages.length) {
+      // Make sure ID can be read from first message.
+      const delta = id - messages[0].id;
+      this.messagesSubject.next(
+        messages.map(message => ({...message, id: message.id + delta}))
+      );
+    }
+  }
+
+  loadConveration(conversation: CompletedConversation) {
+    this.settings.next({...this.settings.value, parent: conversation[0].id})
+    this.nextMessages(conversation);
+    this.setConversationId(Date.now());  // Order matters!
   }
 
   private nextMessages(messages: ConversationMessage[]) {
