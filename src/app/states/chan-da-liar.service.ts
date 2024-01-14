@@ -4,7 +4,7 @@ import {
   AzureCognitiveService,
   AzureCognitiveState,
 } from './azure-cognitive.service';
-import { combineLatest, map, shareReplay } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, shareReplay } from 'rxjs';
 import { DeviceService, DeviceState, MicrophoneState } from './device.service';
 import { FirebaseService, FirebaseState } from './firebase.service';
 
@@ -20,6 +20,7 @@ export interface ChanDaLiarState {
   providedIn: 'root',
 })
 export class ChanDaLiarService {
+  private initialLoad = true;
   state$ = combineLatest([
     this.openAi.state$,
     this.azureCognitive.state$,
@@ -38,6 +39,9 @@ export class ChanDaLiarService {
     private azureCognitive: AzureCognitiveService,
     private firebase: FirebaseService,
   ) {}
+
+  isInitialLoad() { return this.initialLoad; }
+  setInitialLoad(value: boolean) { this.initialLoad = value; }
 
   mapState(
     openAi: OpenAIState,

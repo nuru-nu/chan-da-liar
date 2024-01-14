@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { ModalHandle, ModalInstance } from '../../modules/modal/modal.service';
-import { ChanDaLiarService } from '../../states/chan-da-liar.service';
+import { ChanDaLiarService, ChanDaLiarState } from '../../states/chan-da-liar.service';
 import { OpenAiService } from '../../states/open-ai.service';
 import { AzureCognitiveService } from '../../states/azure-cognitive.service';
 import { ConfigurationOpenaiSidebarComponent } from '../configuration-openai-sidebar/configuration-openai-sidebar.component';
@@ -18,7 +18,6 @@ import {
   ConfigurationLightSidebarComponent
 } from '../configuration-light-sidebar/configuration-light-sidebar.component';
 import { LightService } from '../../states/light.service';
-import { map } from "rxjs";
 import { AppService } from "../../states/app.service";
 
 @Component({
@@ -83,7 +82,14 @@ export class ConfigurationSidebarComponent implements ModalInstance<void> {
     private firebase: FirebaseService,
     private config: ConfigService,
     private app: AppService
-  ) {}
+  ) {
+    this.state$.subscribe((state: ChanDaLiarState) => {
+      if (chanDaLiar.isInitialLoad() && this.modal && state.ready && this.modal) {
+        chanDaLiar.setInitialLoad(false);
+        this.modal.dismiss();
+      }
+    })
+  }
 
 
   setOverrideMode(developer: boolean) {
