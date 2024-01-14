@@ -36,7 +36,13 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
 
   constructor(
     private explorer: FirebaseExplorerService,
-  ) {}
+  ) {
+    if (explorer.initialLoad) {
+      explorer.initialLoad = false;
+    } else {
+      explorer.refresh();
+    }
+  }
 
   ngAfterViewChecked() {
     if (this.needsFocus) {

@@ -32,6 +32,7 @@ export class FirebaseExplorerService {
   private showArchived = new BehaviorSubject<boolean>(false);
   private showStarred = new BehaviorSubject<boolean>(false);
   private conversations = new BehaviorSubject<Conversation[]>([]);
+  initialLoad: boolean = true;
 
   private initialized = false;
 
@@ -53,6 +54,16 @@ export class FirebaseExplorerService {
     private firebase: FirebaseService,
     private conversation: ConversationService,
   ) {}
+
+  async refresh() {
+    const uids = this.showing.value;
+    for (const uid of uids) {
+      await this.toggleUser(uid);
+    }
+    for (const uid of uids) {
+      await this.toggleUser(uid);
+    }
+  }
 
   async toggleUser(uid: string) {
     const showing = new Set(this.showing.value);
