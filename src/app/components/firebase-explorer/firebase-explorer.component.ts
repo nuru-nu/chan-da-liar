@@ -77,6 +77,9 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
     ).length;
   }
 
+  toggleConversation(uid: string, id: number) {
+    this.explorer.toggleConversation(uid, id);
+  }
   getName(users: {id: string, name: string}[], uid: string) {
     return users.filter(u => u.id === uid)[0].name;
   }
@@ -104,9 +107,6 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
       this.toggleEditTitle(null, uid, id);
       event.stopPropagation();
     }
-  }
-  toggleConversation(uid: string, id: number) {
-    this.explorer.toggleConversation(uid, id);
   }
   async loadConversation(event: MouseEvent, uid: string, id: number) {
     event.stopPropagation();

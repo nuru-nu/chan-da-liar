@@ -3,6 +3,7 @@ import { ConversationNotes, ConversationSummary, FirebaseService, FirebaseState,
 import { BehaviorSubject, combineLatest, mergeMap, shareReplay } from 'rxjs';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 import { CompletedConversation, ConversationService } from './states/conversation.service';
+import { RoutedInterface, RouterService } from './router.service';
 
 interface Conversation {
     uid: string;
@@ -25,10 +26,11 @@ export interface FirebaseExplorerState {
 @Injectable({
   providedIn: 'root'
 })
-export class FirebaseExplorerService {
+export class FirebaseExplorerService implements RoutedInterface {
 
   private busy = new BehaviorSubject<boolean>(false);
   private showing = new BehaviorSubject<Set<string>>(new Set());
+  private expanded = new BehaviorSubject<Set<string>>(new Set());
   private showArchived = new BehaviorSubject<boolean>(false);
   private showStarred = new BehaviorSubject<boolean>(false);
   private conversations = new BehaviorSubject<Conversation[]>([]);
@@ -40,12 +42,13 @@ export class FirebaseExplorerService {
     this.firebase.state$,
     this.busy,
     this.showing,
+    this.expanded,
     this.showArchived,
     this.showStarred,
     this.conversations,
   ]).pipe(
-    mergeMap(([firebaseState, busy, showing, showArchived, showStarred, conversations]) =>
-      fromPromise(this.mapState(firebaseState, busy, showing, showArchived, showStarred, conversations))
+    mergeMap(([firebaseState, busy, showing, expanded, showArchived, showStarred, conversations]) =>
+      fromPromise(this.mapState(firebaseState, busy, showing, expanded, showArchived, showStarred, conversations))
     ),
     shareReplay(1)
   );
@@ -53,7 +56,10 @@ export class FirebaseExplorerService {
   constructor(
     private firebase: FirebaseService,
     private conversation: ConversationService,
-  ) {}
+    private router: RouterService,
+  ) {
+    router.register('explorer', this);
+  }
 
   async refresh() {
     const uids = this.showing.value;
@@ -139,12 +145,15 @@ export class FirebaseExplorerService {
   }
 
   async toggleConversation(uid: string, id: number) {
+    const uid_id = makeConversationKey(uid, id);
     await this.updateConversation(uid, id, async (sel: Conversation) => {
       if (sel.conversation) {
         delete sel.conversation;
+        this.expanded.next(new Set([...this.expanded.value].filter(x => x !== uid_id)));
       } else {
         this.busy.next(true);
         sel.conversation = await this.firebase.loadConversation(uid, id);
+        this.expanded.next(new Set([...this.expanded.value, uid_id]));
         this.busy.next(false);
       }
     });
@@ -166,6 +175,7 @@ export class FirebaseExplorerService {
     firebaseState: FirebaseState,
     busy: boolean,
     showing: Set<string>,
+    expanded: Set<string>,
     showArchived: boolean,
     showStarred: boolean,
     conversations: Conversation[],
@@ -199,6 +209,30 @@ export class FirebaseExplorerService {
         }
       }
     }
+    const kv = new Map<string, string>();
+    kv.set('showing', [...showing].join(','));
+    kv.set('showArchived', showArchived ? 'yes' : 'no');
+    kv.set('showStarred', showStarred ? 'yes' : 'no');
+    kv.set('expanded', [...expanded].join(','));
+    this.router.update('explorer', kv);
     return ret;
   }
+
+  async loadFromState(kv: Map<string, string>) {
+    console.log('loadFromState', kv);
+    this.showArchived.next(kv.get('showArchived') === 'yes');
+    this.showStarred.next(kv.get('showStarred') === 'yes');
+    const showing = new Set(kv.get('showing')!.split(',').filter(s => s));
+    for (const uid of [...showing].filter(s => !this.showing.value.has(s))) {
+      await this.toggleUser(uid);
+    }
+    for (const uid of [...this.showing.value].filter(s => !showing.has(s))) {
+      this.toggleUser(uid);
+    }
+    for (const uid_id of kv.get('expanded')!.split(',').filter(s => s)) {
+      const { uid, id } = parseConversationKey(uid_id);
+      this.toggleConversation(uid, id);
+    }
+  }
+
 }

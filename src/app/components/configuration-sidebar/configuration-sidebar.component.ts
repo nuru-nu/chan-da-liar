@@ -19,6 +19,7 @@ import {
 } from '../configuration-light-sidebar/configuration-light-sidebar.component';
 import { LightService } from '../../states/light.service';
 import { AppService } from "../../states/app.service";
+import { RouterService } from 'src/app/router.service';
 
 @Component({
   selector: 'app-configuration-sidebar',
@@ -81,12 +82,14 @@ export class ConfigurationSidebarComponent implements ModalInstance<void> {
     private azureCognitive: AzureCognitiveService,
     private firebase: FirebaseService,
     private config: ConfigService,
-    private app: AppService
+    private app: AppService,
+    router: RouterService,
   ) {
     this.state$.subscribe((state: ChanDaLiarState) => {
       if (chanDaLiar.isInitialLoad() && this.modal && state.ready && this.modal) {
         chanDaLiar.setInitialLoad(false);
         this.modal.dismiss();
+        router.loadFromInitialState();
       }
     })
   }
