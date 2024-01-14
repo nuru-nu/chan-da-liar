@@ -36,12 +36,21 @@ export function createOngoingRecognizer(options: {textPrefix: string | undefined
     append(text: string) {
       const newText = textSubject.value + text;
       const cs = Date.now() - startedAt > 1000 ? '?!.' : '?!.';
+      const abbreviation = (t: string, i: number) => {
+        if (i - 2 < 0) return false;
+        // "as in e.g."
+        if (t.substring(i - 2) === '.') return true;
+        if (t.substring(i - 2) === ' ') return true;
+        return false;
+      };
       for (const c of cs) {
         const i = newText.lastIndexOf(c);
         if (i !== -1) {
-          completedSubject.next(newText.substring(0, i + 1));
-          textSubject.next(newText.substring(i + 1))
-          return
+          if (!abbreviation(newText, i)) {
+            completedSubject.next(newText.substring(0, i + 1));
+            textSubject.next(newText.substring(i + 1));
+            return;
+          }
         }
       }
 

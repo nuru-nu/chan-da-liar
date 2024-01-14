@@ -155,10 +155,41 @@ export class ConversationService {
       }
     });
 
-    keyboard.registerExclusive('Space', (e: KeyboardEvent) => this.decide('yes', e.shiftKey));
+    keyboard.registerExclusive('Space', (e: KeyboardEvent) => this.decide('yes', e.shiftKey, e.ctrlKey));
     keyboard.registerExclusive('Enter', (e: KeyboardEvent) => this.allYesAndPrompt(e.shiftKey));
     keyboard.registerExclusive('Backspace', (e: KeyboardEvent) => this.decide('skip', e.shiftKey));
     keyboard.registerExclusive('ArrowUp', (e: KeyboardEvent) => this.undecide());
+    keyboard.registerExclusive('KeyS', (e: KeyboardEvent) => this.split());
+    keyboard.registerExclusive('KeyM', (e: KeyboardEvent) => this.merge());
+  }
+
+  private split() {
+    const highlight = this.highlightSubject.value;
+    if (!highlight || !highlight.completed) return;
+    const regex = /(?<!e\.g|etc|i\.e)\. (?=[A-Z])/;
+    const m = highlight.text.match(/^(.*\S{2}[.?!])\s+(\S.*)/)
+    if (!m) return;
+    highlight.text = m[1];
+    const nextMessage = {...highlight, text: m[2]};
+    const messages = this.messagesSubject.value;
+    const idx = messages.findIndex(m => m.id === highlight.id);
+    messages.splice(idx + 1, 0, nextMessage);
+    this.highlightSubject.next(highlight);
+    this.messagesSubject.next(messages);
+}
+
+  private merge() {
+    const highlight = this.highlightSubject.value;
+    if (!highlight || !highlight.completed) return;
+    const messages = this.messagesSubject.value;
+    const idx = messages.findIndex(m => m.id === highlight.id);
+    if (idx + 1 >= messages.length) return;
+    const nextMessage = messages[idx + 1];
+    if (!nextMessage.completed) return;
+    highlight.text += ' ' + nextMessage.text;
+    messages.splice(idx + 1, 1);
+    this.highlightSubject.next(highlight);
+    this.messagesSubject.next(messages);
   }
 
   private allYesAndPrompt(toTheEnd?: boolean) {
@@ -179,15 +210,19 @@ export class ConversationService {
     });
   }
 
-  private decide(decision: Decision, toTheEnd?: boolean) {
+  private decide(decision: Decision, toTheEnd?: boolean, skipReading?: boolean) {
     const message = this.highlightSubject.value;
     if (message) {
       message.decision = decision;
-      this.nextMessages(this.messagesSubject.value);
       if (message.role === 'assistant' && decision === 'yes') {
-        this.queue(message);
+        if (skipReading) {
+          message.played = true;
+        } else {
+          this.queue(message);
+        }
       }
-      if (toTheEnd) this.decide(decision, toTheEnd);
+      this.nextMessages(this.messagesSubject.value);
+      if (toTheEnd) this.decide(decision, toTheEnd, skipReading);
     }
   }
 
@@ -212,6 +247,7 @@ export class ConversationService {
     if (message?.completed) {
       const completed = message as CompletedConversationMessage;
       message.decision = 'open';
+      message.played = message.queued = false;
       this.nextMessages(messages);
     }
   }
