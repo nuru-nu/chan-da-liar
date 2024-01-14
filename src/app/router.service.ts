@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ModalService } from './modules/modal/modal.service';
 import { FirebaseExplorerComponent } from './components/firebase-explorer/firebase-explorer.component';
+import { UtilsService } from './utils.service';
 
 export interface RoutedInterface {
   loadFromState(kv: Map<string, string>): void;
@@ -22,9 +23,11 @@ export class RouterService {
 
   constructor(
     private modal: ModalService,
+    private utils: UtilsService,
   ) {
     const [_, initialHash] = window.location.href.split('#', 2);
     this.initialHash = initialHash;
+    utils.registerRouter(this);
   }
 
   register(name: string, routed: RoutedInterface) {
@@ -42,6 +45,10 @@ export class RouterService {
     window.location.href = window.location.href.split('#')[0] + `#name=${e(name)}&` + (
       [...kv.entries()].map(([k, v]) => `${e(k)}=${e(v)}`)
     ).join('&');
+  }
+
+  clear() {
+    window.location.href = window.location.href.split('#')[0] + '#';
   }
 
   private enqueue(pending: Pending) {
@@ -62,13 +69,7 @@ export class RouterService {
       const name = kv.get('name');
       kv.delete('name');
       if (name === 'explorer') {
-        this.modal.sidebar({
-          component: FirebaseExplorerComponent,
-          title: 'Firebase Explorer',
-          subtitle: 'Explore data in firestore database.',
-          classNames: ['fullscreen'],
-          canDismiss: true,
-        });
+        this.utils.openExplorer();
         this.enqueue({name, kv});
       } else {
         throw new Error(`Unknown route: ${name}`);

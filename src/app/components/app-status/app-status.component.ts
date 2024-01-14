@@ -5,6 +5,7 @@ import { ConversationService } from 'src/app/states/conversation.service';
 import { map } from 'rxjs';
 import { ModalService } from 'src/app/modules/modal/modal.service';
 import { FirebaseExplorerComponent } from '../firebase-explorer/firebase-explorer.component';
+import { UtilsService } from 'src/app/utils.service';
 
 @Component({
   selector: 'app-status',
@@ -21,18 +22,14 @@ export class AppStatusComponent {
     private openAI: OpenAiService,
     private firebase: FirebaseService,
     private conversation: ConversationService,
-    private modal: ModalService) {
+    private modal: ModalService,
+    private utils: UtilsService,
+    ) {
   }
 
   openExplorer() {
     if (this.loginState.value === 'success') {
-      this.modal.sidebar({
-        component: FirebaseExplorerComponent,
-        title: 'Firebase Explorer',
-        subtitle: 'Explore data in firestore database.',
-        classNames: ['fullscreen'],
-        canDismiss: true,
-      });
+      this.utils.openExplorer();
     }
   }
 }
