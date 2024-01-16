@@ -159,7 +159,7 @@ export class ConversationService {
 
     keyboard.registerExclusive('Space', (e: KeyboardEvent) => this.decide('yes', e.shiftKey, e.ctrlKey));
     keyboard.registerExclusive('Enter', (e: KeyboardEvent) => this.allYesAndPrompt(e.shiftKey));
-    keyboard.registerExclusive('Backspace', (e: KeyboardEvent) => e.ctrlKey ? this.delete() : this.decide('skip', e.shiftKey));
+    keyboard.registerExclusive('Backspace', (e: KeyboardEvent) => e.ctrlKey ? this.delete(e.shiftKey) : this.decide('skip', e.shiftKey));
     keyboard.registerExclusive('ArrowUp', (e: KeyboardEvent) => this.undecide());
     keyboard.registerExclusive('KeyS', (e: KeyboardEvent) => this.split(e.shiftKey));
     keyboard.registerExclusive('KeyM', (e: KeyboardEvent) => this.merge(e.shiftKey));
@@ -200,7 +200,7 @@ export class ConversationService {
     if (toTheEnd) this.merge(toTheEnd);
   }
 
-  private delete() {
+  private delete(toTheEnd?: boolean) {
     const highlight = this.highlightSubject.value;
     if (!highlight || !highlight.completed) return;
     const messages = this.messagesSubject.value;
@@ -215,6 +215,9 @@ export class ConversationService {
     }
     this.messagesSubject.next(messages);
     this.highlightSubject.next(nextHighlight);
+    if (toTheEnd && nextHighlight && nextHighlight.completed) {
+      this.delete(toTheEnd);
+    }
   }
 
   private allYesAndPrompt(toTheEnd?: boolean) {
