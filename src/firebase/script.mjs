@@ -1,4 +1,8 @@
 
+// run like this:
+// 1. download private key (see below)
+// 2. node src/firebase/script.mjs
+
 // Note that 'firestore-lite' cannot be used with 'firebase-admin'.
 import admin from 'firebase-admin';
 import { readFileSync } from 'fs';
@@ -155,3 +159,50 @@ async function copyUserConfig(src, dst) {
 }
 
 // copyUserConfig('D4C92Ukjy4VsyQglP6pCa2MfdKm2', 'CdFPywwXXwaQLtin1eKyRCPc5qr1');
+
+
+async function getPrompts(uid, name) {
+
+  const prompts = new Map();
+  const ignored = new Map();
+
+  async function get(path) {
+    (await db.collection(path).get()).forEach(doc => {
+      const prompt = doc.data().conversation[0];
+      if (prompt.role !== 'system') {
+        ignored.set(prompt.role, (ignored.get(prompt.role) || 0) + 1);
+      }
+      prompts.set(prompt.text, (prompts.get(prompt.text) || 0) + 1);
+    });
+  }
+
+  function dump() {
+    const total = [...prompts.keys()].reduce((s, k) => s + k.length, 0);
+    prompts.size;
+    console.log(`${prompts.size} prompts, total ${total}, avg ${Math.round(total/prompts.size)}`);
+    const values = [...prompts.values()];
+    values.sort((a, b) => b - a);
+    console.log('times used', values);
+    console.log('ignored', ignored);
+  }
+
+  console.log(name, 'conversation');
+  await get(`users/${uid}/conversation`);
+  dump();
+
+  console.log(name, 'conversation+archive');
+  await get(`users/${uid}/archive`);
+  dump();
+}
+
+async function runForEveryUid(func) {
+  const users = [];
+  (await db.collection('users').limit(0).get()).forEach(user => users.push(user));
+  for (const doc of users) {
+    console.log();
+    await func(doc.id, doc.data().displayName);
+  }
+}
+
+
+runForEveryUid(getPrompts);
