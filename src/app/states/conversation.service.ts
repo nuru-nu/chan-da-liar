@@ -112,6 +112,8 @@ class MessageBuilder {
 })
 export class ConversationService {
   messagesSubject = new BehaviorSubject<ConversationMessage[]>([]);
+  // `highlight` should always point to the first open message, and there should
+  // only be open messages after the highlight.
   highlightSubject = new BehaviorSubject<CompletedConversationMessage | null>(
     null
   );
@@ -159,26 +161,30 @@ export class ConversationService {
     keyboard.registerExclusive('Enter', (e: KeyboardEvent) => this.allYesAndPrompt(e.shiftKey));
     keyboard.registerExclusive('Backspace', (e: KeyboardEvent) => e.ctrlKey ? this.delete() : this.decide('skip', e.shiftKey));
     keyboard.registerExclusive('ArrowUp', (e: KeyboardEvent) => this.undecide());
-    keyboard.registerExclusive('KeyS', (e: KeyboardEvent) => this.split());
-    keyboard.registerExclusive('KeyM', (e: KeyboardEvent) => this.merge());
+    keyboard.registerExclusive('KeyS', (e: KeyboardEvent) => this.split(e.shiftKey));
+    keyboard.registerExclusive('KeyM', (e: KeyboardEvent) => this.merge(e.shiftKey));
   }
 
-  private split() {
+  private split(toTheEnd?: boolean) {
     const highlight = this.highlightSubject.value;
     if (!highlight || !highlight.completed) return;
     const regex = /(?<!e\.g|etc|i\.e)\. (?=[A-Z])/;
     const m = highlight.text.match(/^(.*\S{2}[.?!])\s+(\S.*)/)
     if (!m) return;
     highlight.text = m[1];
-    const nextMessage = {...highlight, text: m[2]};
+    const ids = new Set(this.messagesSubject.value.map(m => m.id));
+    let nextId = highlight.id + 1;
+    while (ids.has(nextId)) nextId++;
+    const nextMessage = {...highlight, text: m[2], highlight: false, id: nextId};
     const messages = this.messagesSubject.value;
     const idx = messages.findIndex(m => m.id === highlight.id);
     messages.splice(idx + 1, 0, nextMessage);
     this.highlightSubject.next(highlight);
     this.messagesSubject.next(messages);
+    if (toTheEnd) this.split(toTheEnd);
 }
 
-  private merge() {
+  private merge(toTheEnd?: boolean) {
     const highlight = this.highlightSubject.value;
     if (!highlight || !highlight.completed) return;
     const messages = this.messagesSubject.value;
@@ -186,10 +192,12 @@ export class ConversationService {
     if (idx + 1 >= messages.length) return;
     const nextMessage = messages[idx + 1];
     if (!nextMessage.completed) return;
+    if (highlight.role !== nextMessage.role) return;
     highlight.text += ' ' + nextMessage.text;
     messages.splice(idx + 1, 1);
     this.highlightSubject.next(highlight);
     this.messagesSubject.next(messages);
+    if (toTheEnd) this.merge(toTheEnd);
   }
 
   private delete() {
@@ -243,27 +251,14 @@ export class ConversationService {
     }
   }
 
-  private predecessor(successor: ConversationMessage): ConversationMessage | null {
-    const messages = this.messagesSubject.value;
-    for (let i = 1; i < messages.length; i++) {
-      if (messages[i].id === successor.id) {
-        return messages[i - 1];
-      }
-    }
-    return null;
-  }
-
   private undecide() {
     const messages = this.messagesSubject.value;
     const highlight = this.highlightSubject.value;
-    const message = (
-      highlight === null
-      ? messages[messages.length - 1]
-      : this.predecessor(highlight)
-    );
-    if (message?.completed) {
-      message.decision = 'open';
-      message.played = message.queued = false;
+    const idx = highlight ? messages.findIndex(m => m.id === highlight.id) : messages.length;
+    if (idx < 1) return;
+    const previous = messages[idx - 1];
+    if (previous.completed) {
+      previous.decision = 'open';
       this.nextMessages(messages);
     }
   }
@@ -317,9 +312,13 @@ export class ConversationService {
     let highlight = null;
     for (const message of messages) {
       if (message.completed) {
-        if (highlight === null && message.decision === 'open') {
-          message.highlight = true;
-          highlight = message;
+        if (message.decision === 'open') {
+          message.played = message.queued = false;
+          message.highlight = false;
+          if (highlight === null) {
+            message.highlight = true;
+            highlight = message;
+          }
         } else {
           message.highlight = false;
         }
