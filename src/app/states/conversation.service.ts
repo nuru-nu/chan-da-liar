@@ -158,7 +158,7 @@ export class ConversationService {
     });
 
     keyboard.registerExclusive('Space', (e: KeyboardEvent) => this.decide('yes', e.shiftKey, e.ctrlKey));
-    keyboard.registerExclusive('Enter', (e: KeyboardEvent) => this.allYesAndPrompt(e.shiftKey));
+    keyboard.registerExclusive('Enter', (e: KeyboardEvent) => this.maybeAcceptAllThenPrompt(e.shiftKey));
     keyboard.registerExclusive('Backspace', (e: KeyboardEvent) => e.ctrlKey ? this.delete(e.shiftKey) : this.decide('skip', e.shiftKey));
     keyboard.registerExclusive('ArrowUp', (e: KeyboardEvent) => this.undecide());
     keyboard.registerExclusive('KeyS', (e: KeyboardEvent) => this.split(e.shiftKey));
@@ -220,12 +220,13 @@ export class ConversationService {
     }
   }
 
-  private allYesAndPrompt(toTheEnd?: boolean) {
-    while (this.highlightSubject.value) this.decide('yes', toTheEnd);
-    this.prompt();
-  }
+  private maybeAcceptAllThenPrompt(firstAcceptAll?: boolean) {
+    if (firstAcceptAll) {
+      while (this.highlightSubject.value && this.highlightSubject.value.completed) {
+        this.decide('yes');
+      }
+    }
 
-  private prompt() {
     const highlight = this.highlightSubject.value;
     const messages = this.messagesSubject.value;
     const insertAt = 
