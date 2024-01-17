@@ -34,7 +34,10 @@
   }
 
   &.decision-skip {
-    @apply border-dashed line-through bg-opacity-50;
+    @apply border-dashed bg-opacity-50;
+    .message-text {
+      @apply line-through;
+    }
   }
 
   &.decision-yes {

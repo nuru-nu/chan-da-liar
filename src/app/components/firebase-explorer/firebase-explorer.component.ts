@@ -126,7 +126,8 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString()} – ${Math.round(10 * summary.minutes) / 10} minutes`
   }
   fmtSummary2(summary: ConversationSummary) {
-    return `${summary.settings?.model || '?'} – ${summary.messages} messages / ${summary.words} words (Deliar ${summary.deliarMessages}/${summary.deliarWords})`;
+    const maybeDelay = summary.maxDelayMs ? ` – delay ⌀${summary.averageDelayMs}ms (max ${summary.maxDelayMs})` : '';
+    return `${summary.settings?.model || '?'} – ${summary.messages} messages / ${summary.words} words (Deliar ${summary.deliarMessages}/${summary.deliarWords})${maybeDelay}`;
   }
   isExpanded(uid: string, id: number) {
     return this.expanded.has(makeConversationKey(uid, id));

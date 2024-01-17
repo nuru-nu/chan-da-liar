@@ -88,7 +88,7 @@ function objectToMap<T>(obj: { [key: string]: T }): Map<number, T> {
   return new Map<number, T>([...Object.entries(obj)].map(([k, v]) => [parseInt(k), v]));
 }
 
-const SUMMARIES_VERSION = 3;
+const SUMMARIES_VERSION = 5;
 // users/{uid}/summaries/0
 export interface ConversationSummary {
   settings?: ConversationSettings;
@@ -99,6 +99,8 @@ export interface ConversationSummary {
   words: number;
   deliarMessages: number;
   deliarWords: number;
+  averageDelayMs?: number;
+  maxDelayMs?: number;
 }
 
 // users/{uid}/notes/0
@@ -416,7 +418,20 @@ export class FirebaseService {
     const words = countWords(conv);
     const deliarMessages = liarConv.length;
     const deliarWords = countWords(liarConv);
-    return {settings, archived, date, minutes, messages, words, deliarMessages, deliarWords};
+    const delays = conv.filter(
+      message => message.role === 'assistant' && (message.initialDelayMs || 0) > 0
+    ).map(
+      message => message.initialDelayMs || 0
+    );
+    const totalDelay = delays.reduce((s, d) => s + d, 0);
+    const averageDelayMs = delays.length ? Math.round(totalDelay / delays.length) : undefined;
+    const maxDelayMs = delays.length ? Math.max(...delays) : undefined;
+    return {
+      settings,
+      archived, date, minutes, messages,
+      words, deliarMessages, deliarWords,
+      averageDelayMs, maxDelayMs
+    };
   }
 
   private async saveSummaries(uid: string, summaries: Map<ConversationKey, ConversationSummary>) {

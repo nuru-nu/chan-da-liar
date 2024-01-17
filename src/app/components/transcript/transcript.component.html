@@ -1,3 +1,5 @@
+<!-- https://play.tailwindcss.com/s7psQsOC6Q -->
+
 <div class="flex justify-between px-3 py-1">
   <span class="text-gray-400 text-xs">Transcript ({{ (settings$ | async)?.model }}) – id=<code>{{conversationId$ | async}}</code>, created {{formatCreated(conversationId$ | async)}}</span>
   <button class="text-xs text-black text-right w-12" (click)="clear()">
@@ -10,7 +12,7 @@
   #container>
   <div class="flex flex-col w-full" #messagelist>
     <div
-      *ngFor="let message of messages$ | async; trackBy: trackMessage"
+      *ngFor="let message of messages$ | async; let i = index; trackBy: trackMessage"
       class="flex"
       [ngClass]="[
       message.completed && message.highlight ? 'highlight' : '',
@@ -27,14 +29,16 @@
           ? [message.role, 'decision-' + message.decision]
           : [message.role]
       ">
+
         <!-- <div>{{dump(message)}}</div> -->
-        <div *ngIf="message.completed && message.prefix">
+    
+        <div *ngIf="message.completed && message.prefix" title="{{ message.prefix }}">
           (prefixed)
         </div>
 
         <div
             *ngIf="message.completed && message.role === 'system'"
-            class="whitespace-pre-wrap"
+            class="whitespace-pre-wrap grow"
             >{{ displayMessage(message) }}
           <button
             (click)="toggleExpanded()"
@@ -46,7 +50,7 @@
 
         <div
             *ngIf="message.completed && message.role !== 'system' && message.id !== editing"
-            class="whitespace-pre-wrap"
+            class="whitespace-pre-wrap grow message-text"
             (click)="edit($event)"
             [innerHTML]="messageHtml(message)"
             >
@@ -66,6 +70,14 @@
         <div *ngIf="!message.completed" class="part ongoing"
           >{{ message.text$ | async }}...</div>
 
+        <div>  <!--  class="float-right ml-6" -->
+          <div class="flex gap-3 bg-gray-50 text-xs">
+            <div class="font-mono">#{{ getSeqId(message.id) }}</div>
+            <div class="">{{ getDelta(i) }}</div>
+            <div *ngIf="message.completed && message.initialDelayMs">{{ message.initialDelayMs }}ms</div>
+          </div>
+        </div>
+  
         <div
           class="icons-top" *ngIf="developer && message.completed">
           <fa-icon [icon]="saveIcon" class="cursor-pointer" (click)="savePrerecording(message)"></fa-icon>

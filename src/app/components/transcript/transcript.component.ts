@@ -46,10 +46,12 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
 
   @ViewChild('messagelist')
   messageList?: ElementRef<HTMLDivElement>;
-
+  
   conversationId$ = this.conversation.conversationId$;
   settings$ = this.conversation.settings$;
   messages$ = this.conversation.messages$;
+  private messageIds: number[] | null = null;
+  private sortedMessageIds: number[] | null = null;
   expanded = false;
   developer = false;
 
@@ -64,6 +66,12 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   ) {
     app.state$.subscribe(state => {
       this.developer = state.overrideMode;
+    });
+    this.messages$.subscribe(messages => {
+      const messageIds = messages.map(m => m.id);
+      this.messageIds = [...messageIds];
+      messageIds.sort((a, b) => a - b);
+      this.sortedMessageIds = messageIds;
     });
   }
 
@@ -190,6 +198,29 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
       return false;
     }
     return true;
+  }
+
+  getSeqId(id: number) {
+    return this.sortedMessageIds?.indexOf(id);
+  }
+
+  getDelta(i: number) {
+    if (i === 0 || !this.messageIds) return '';
+    const dtpm = Math.round((this.messageIds[i] - this.messageIds[i - 1]) / 1000);
+    const dt = Math.abs(dtpm);
+    const pm = dtpm > 0 ? '+' : '-';
+    if (dt > 3600) {
+      const h = Math.floor(dt / 3600);
+      const m = Math.floor((dt - 3600 * h) / 60);
+      const s = dt - 3600 * h - 60 * m;
+      return `${pm}${h}h${m}m${s}`
+    }
+    if (dt > 60) {
+      const m = Math.floor(dt / 60);
+      const s = dt - 60 * m;
+      return `${pm}${m}m${s}`
+    }
+    return `${pm}${dt}s`
   }
 
 }
