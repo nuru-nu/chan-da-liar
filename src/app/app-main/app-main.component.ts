@@ -9,6 +9,7 @@ import { ConversationService } from '../states/conversation.service';
 import { OngoingRecognition } from '../states/ongoing-recognizer';
 import { AppService } from "../states/app.service";
 import { KeyboardService } from '../keyboard';
+import { RouterService } from '../router.service';
 
 @Component({
   selector: 'app-app-main',
@@ -30,13 +31,16 @@ export class AppMainComponent {
     private chanDaLiar: ChanDaLiarService,
     private app: AppService,
     private conversation: ConversationService,
-    keyboard: KeyboardService
+    keyboard: KeyboardService,
+    private router: RouterService,
   ) {
     firstValueFrom(this.state$).then((state) => {
       if (!state.ready) {
         this.openConfigurations(false);
+      } else {
+        this.router.loadFromInitialState();
       }
-    });
+    })
     keyboard.registerExclusive('KeyP', (e: KeyboardEvent) => {
       this.expandedPrerecordings = !this.expandedPrerecordings;
     });
