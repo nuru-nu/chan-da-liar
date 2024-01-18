@@ -56,10 +56,10 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
 
   toggleUser(id: string) { this.explorer.toggleUser(id); }
   userColors = new Map<string, string>();
-  getColor(showing: Set<string>, id: string, alwaysColored: boolean = false) {
+  getColor(showing: Set<string>, id: string, alwaysColored: boolean, idx?: number) {
     if (!alwaysColored && !showing.has(id)) return 'bg-gray-200';
     if (!this.userColors.has(id)) {
-      const color = `color${this.userColors.size % COLORS_N}`;
+      const color = `color${(idx || 0) % COLORS_N}`;
       this.userColors.set(id, color);
     }
     return this.userColors.get(id);

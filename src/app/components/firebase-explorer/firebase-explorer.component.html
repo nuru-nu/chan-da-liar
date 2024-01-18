@@ -9,10 +9,10 @@
 
     <div class="flex flex-wrap gap-3">
       <div class="mr-6">Show conversations:</div>
-      <div *ngFor="let user of state.users"
+      <div *ngFor="let user of state.users; let idx = index"
            [ngClass]="[
               'cursor-pointer', 'rounded-xl', 'px-3',
-              getColor(state.showing, user.id),
+              getColor(state.showing, user.id, false, idx),
            ]"
            data-id="{{user.id}}"
            title="{{user.id.substring(0, 6) + '...'}}"
@@ -119,10 +119,10 @@
           <div *ngFor="let cc of c.conversation">
             <div *ngIf="cc.role === 'system'">
               <span class="text-xs">{{ fmtRole(cc.role) }}:</span>
-              <span *ngIf="!isEllipsable(cc.text)">
+              <span *ngIf="!isEllipsable(cc.text)" class="whitespace-pre-wrap text-xs">
                 {{ cc.text }}
               </span>
-              <span *ngIf="isEllipsable(cc.text)">
+              <span *ngIf="isEllipsable(cc.text)" class="whitespace-pre-wrap text-xs">
                 {{ isExpanded(c.uid, c.id) ? cc.text : ellipsis(cc.text) }}
                 <span class="cursor-pointer text-xs"
                       (click)="toggleExpanded(c.uid, c.id)">({{ isExpanded(c.uid, c.id) ? 'collapse' : 'expand' }})</span>

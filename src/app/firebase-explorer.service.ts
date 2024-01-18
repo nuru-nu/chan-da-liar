@@ -71,6 +71,43 @@ export class FirebaseExplorerService implements RoutedInterface {
     }
   }
 
+  private async addConversations(uid: string, conversations: Conversation[]) {
+    const summaries = await this.firebase.loadSummaries(uid);
+    const notes = await this.firebase.loadNotes(uid);
+    const conversationMap = new Map(
+      conversations.map(conversation => ([
+        makeConversationKey(conversation.uid, conversation.id),
+        conversation
+      ]))
+    );
+    for (const key of [...notes.keys(), ...summaries.keys()]) {
+      if (!conversationMap.has(key)) {
+        conversationMap.set(key, {...parseConversationKey(key)});
+      }
+    }
+    for(const [key, summary] of summaries.entries()) {
+      conversationMap.get(key)!.summary = summary;
+    }
+    for(const [key, note] of notes.entries()) {
+      conversationMap.get(key)!.notes = note;
+    }
+    conversations = [...conversationMap.values()];
+    conversations.sort((a, b) => b.id - a.id);
+    return conversations;
+  }
+
+  private async setShowing(showing: Set<string>) {
+    this.busy.next(true);
+    const missing = new Set([...showing].filter(s => !this.showing.value.has(s)));
+    this.showing.next(showing);
+    let conversations = this.conversations.value.filter(c => showing.has(c.uid));
+    for (const uid of missing) {
+      conversations = await this.addConversations(uid, conversations);
+    }
+    this.conversations.next(conversations);
+    this.busy.next(false);
+  }
+
   async toggleUser(uid: string) {
     const showing = new Set(this.showing.value);
     if (showing.has(uid)) {
@@ -81,27 +118,7 @@ export class FirebaseExplorerService implements RoutedInterface {
     } else {
       showing.add(uid);
       this.busy.next(true);
-      const summaries = await this.firebase.loadSummaries(uid);
-      const notes = await this.firebase.loadNotes(uid);
-      const conversationMap = new Map(
-        this.conversations.value.map(conversation => ([
-          makeConversationKey(conversation.uid, conversation.id),
-          conversation
-        ]))
-      );
-      for (const key of [...notes.keys(), ...summaries.keys()]) {
-        if (!conversationMap.has(key)) {
-          conversationMap.set(key, {...parseConversationKey(key)});
-        }
-      }
-      for(const [key, summary] of summaries.entries()) {
-        conversationMap.get(key)!.summary = summary;
-      }
-      for(const [key, note] of notes.entries()) {
-        conversationMap.get(key)!.notes = note;
-      }
-      const conversations = [...conversationMap.values()];
-      conversations.sort((a, b) => b.id - a.id);
+      const conversations = await this.addConversations(uid, this.conversations.value);
       this.conversations.next(conversations);
       this.busy.next(false);
     }
@@ -202,7 +219,10 @@ export class FirebaseExplorerService implements RoutedInterface {
           ret.users.unshift(user);
           if (!this.initialized) {
             this.initialized = true;
-            this.toggleUser(user.id);
+            if (showing.size === 0) {
+              console.log('initializing uid')
+              this.toggleUser(user.id);
+            }
           }
         } else {
           ret.users.push(user);
@@ -219,16 +239,10 @@ export class FirebaseExplorerService implements RoutedInterface {
   }
 
   async loadFromState(kv: Map<string, string>) {
-    console.log('loadFromState', kv);
     this.showArchived.next(kv.get('showArchived') === 'yes');
     this.showStarred.next(kv.get('showStarred') === 'yes');
     const showing = new Set(kv.get('showing')!.split(',').filter(s => s));
-    for (const uid of [...showing].filter(s => !this.showing.value.has(s))) {
-      await this.toggleUser(uid);
-    }
-    for (const uid of [...this.showing.value].filter(s => !showing.has(s))) {
-      this.toggleUser(uid);
-    }
+    await this.setShowing(showing);
     for (const uid_id of kv.get('expanded')!.split(',').filter(s => s)) {
       const { uid, id } = parseConversationKey(uid_id);
       this.toggleConversation(uid, id);
