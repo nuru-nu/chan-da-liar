@@ -2,7 +2,7 @@
 
   <!-- https://play.tailwindcss.com/47c9Y2L4l0 -->
 
-  <div class="absolute top-0 mt-6 w-screen text-center z-10">
+  <div class="absolute top-0 mt-6 w-screen text-center z-50">
     <div *ngFor="let toast of toasts$ | async" [ngClass]="['toast', toast.active ? '' : 'disappearing']">{{ toast.text }}</div>
   </div>
 

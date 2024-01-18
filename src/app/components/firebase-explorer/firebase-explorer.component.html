@@ -56,10 +56,17 @@
               ]"
               (click)="toggleConversation(c.uid, c.id)"
               > <!-- title -->
-          <div [ngClass]="[
-                    'cursor-pointer', 'rounded-xl', 'px-3',
-                    getColor(state.showing, c.uid, true)
-                ]">{{getName(state.users, c.uid)}}</div>
+          <div class="flex flex-col gap-1">
+            <div [ngClass]="[
+                      'cursor-pointer', 'rounded-xl', 'px-3',
+                      getColor(state.showing, c.uid, true)
+                  ]">{{getName(state.users, c.uid)}}</div>
+            <div class="cursor-copy text-center font-mono text-xs"
+                  (click)="copyId($event, c.uid, c.id)"
+                   >
+              id={{c.id}}
+            </div>
+          </div>
           <div class="flex flex-col">
             <div class="flex gap-3">
               <div *ngIf="!isEditingTitle(c.uid, c.id)"

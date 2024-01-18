@@ -6,6 +6,7 @@ import { FirebaseExplorerService, FirebaseExplorerState } from 'src/app/firebase
 import { faEyeSlash, faLink, faPen, faSpinner, faStar as faSolidStar, faEye } from '@fortawesome/free-solid-svg-icons';
 import { faStar } from '@fortawesome/free-regular-svg-icons';
 import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
+import { ToastsService } from 'src/app/toasts.service';
 
 const COLORS_N = 6;
 const SYSTEM_ELLIPSIS_LENGTH = 30;
@@ -36,6 +37,7 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
 
   constructor(
     private explorer: FirebaseExplorerService,
+    private toasts: ToastsService,
   ) {
     if (explorer.initialLoad) {
       explorer.initialLoad = false;
@@ -92,6 +94,11 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
       this.editingTitle = key;
       this.needsFocus = true;
     }
+  }
+  copyId(event: MouseEvent, uid:string, id: number) {
+    event?.stopPropagation();
+    navigator.clipboard.writeText(`${uid}-${id}`);
+    this.toasts.showToast('Copied to Clipboard!');
   }
   isEditingTitle(uid: string, id: number) {
     return this.editingTitle === makeConversationKey(uid, id);
