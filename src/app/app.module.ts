@@ -34,6 +34,7 @@ import { AppMainComponent } from './app-main/app-main.component';
 import { StatusbarErrorHandler } from './states/statusbar.service';
 import { FirebaseExplorerComponent } from './components/firebase-explorer/firebase-explorer.component';
 import { PrerecordingLaneNewComponent } from './components/prerecording-lane-new/prerecording-lane-new.component';
+import { ToastsComponent } from './toasts/toasts.component';
 
 @NgModule({
   declarations: [
@@ -67,6 +68,7 @@ import { PrerecordingLaneNewComponent } from './components/prerecording-lane-new
     AppMainComponent,
     FirebaseExplorerComponent,
     PrerecordingLaneNewComponent,
+    ToastsComponent,
   ],
   imports: [
     BrowserModule,

@@ -1,0 +1,8 @@
+
+.toast {
+  @apply inline-block w-auto rounded-xl bg-gray-200 px-6 py-2 mx-3;
+}
+
+.disappearing {
+  @apply transition-transform ease-in duration-300 -translate-y-20;
+}
