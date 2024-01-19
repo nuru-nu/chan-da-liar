@@ -175,14 +175,20 @@ export class ConversationService {
     const ids = new Set(this.messagesSubject.value.map(m => m.id));
     let nextId = highlight.id + 1;
     while (ids.has(nextId)) nextId++;
-    const nextMessage = {...highlight, text: m[2], highlight: false, id: nextId};
+    const nextMessage = {
+      ...highlight,
+      id: nextId,
+      originalText: undefined,
+      text: m[2],
+      highlight: false,
+    };
     const messages = this.messagesSubject.value;
     const idx = messages.findIndex(m => m.id === highlight.id);
     messages.splice(idx + 1, 0, nextMessage);
     this.highlightSubject.next(highlight);
     this.messagesSubject.next(messages);
     if (toTheEnd) this.split(toTheEnd);
-}
+  }
 
   private merge(toTheEnd?: boolean) {
     const highlight = this.highlightSubject.value;
@@ -194,6 +200,7 @@ export class ConversationService {
     if (!nextMessage.completed) return;
     if (highlight.role !== nextMessage.role) return;
     highlight.text += ' ' + nextMessage.text;
+    delete highlight.originalText;
     messages.splice(idx + 1, 1);
     this.highlightSubject.next(highlight);
     this.messagesSubject.next(messages);
