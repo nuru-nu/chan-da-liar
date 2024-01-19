@@ -3,7 +3,7 @@
 }
 
 .highlight {
-  @apply bg-gray-200;
+  @apply bg-gray-200 border-t-2 border-gray-400 border-dashed;
 }
 
 .message {

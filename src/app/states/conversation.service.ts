@@ -168,7 +168,6 @@ export class ConversationService {
   private split(toTheEnd?: boolean) {
     const highlight = this.highlightSubject.value;
     if (!highlight || !highlight.completed) return;
-    const regex = /(?<!e\.g|etc|i\.e)\. (?=[A-Z])/;
     const m = highlight.text.match(/^(.*\S{2}[.?!])\s+(\S.*)/)
     if (!m) return;
     highlight.text = m[1];
@@ -356,23 +355,25 @@ export class ConversationService {
     return this.getPromptMessagesUntil(messages, messages.length - 1);
   }
 
-  pushAssistant(recording: Recording) {
-    const newMessage = new MessageBuilder(recording.content, 'assistant').rate(recording.rate).override().build();
+  private pushMessage(message: CompletedConversationMessage) {
     const lastDecisionIndex = this.messagesSubject.value.findIndex(m => !m.completed || m.decision === 'open');
     if (lastDecisionIndex >= 0) {
-      this.messagesSubject.value.splice(lastDecisionIndex, 0, newMessage);
+      this.messagesSubject.value.splice(lastDecisionIndex, 0, message);
     } else {
-      this.messagesSubject.value.push(newMessage);
+      this.messagesSubject.value.push(message);
     }
     this.nextMessages(this.messagesSubject.value);
     this.pushed.next();
   }
 
+  pushAssistant(recording: Recording) {
+    const newMessage = new MessageBuilder(recording.content, 'assistant').rate(recording.rate).override().build();
+    this.pushMessage(newMessage);
+  }
+
   pushUser(recording: Recording) {
     const newMessage = new MessageBuilder(recording.content, 'user').override().rate(recording.rate).build();
-    this.messagesSubject.value.push(newMessage);
-    this.nextMessages(this.messagesSubject.value);
-    this.pushed.next();
+    this.pushMessage(newMessage);
   }
 
   queue(message: CompletedConversationMessage) {
