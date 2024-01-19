@@ -9,7 +9,18 @@ export function escapeHtml(text: string): string {
     .replace(/'/g, '&#039;');
 }
 
+// TODO: fix this more elegantly; understand why that many renderings
+const diffCache = new Map<string, Map<string, string>>();
+
 export function generateHtmlDiff(original: string, edited: string): string {
+  if (!diffCache.has(original)) {
+    diffCache.set(original, new Map());
+  } else {
+    if (diffCache.get(original)!.has(edited)) {
+      return diffCache.get(original)!.get(edited)!;
+    }
+  }
+
   const diffResult = diffChars(original, edited);
   let html = '';
 
@@ -23,6 +34,8 @@ export function generateHtmlDiff(original: string, edited: string): string {
       html += escapedValue;
     }
   });
+
+  diffCache.get(original)!.set(edited, html);
 
   return html;
 }
