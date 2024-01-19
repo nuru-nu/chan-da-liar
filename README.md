@@ -12,6 +12,12 @@ npm install
 npm start
 ```
 
+In the venue, you'll also have to start the lights server:
+
+```
+node light-controller-server.js
+```
+
 ## Deployment
 
 1. Run `cp deployment_settings.sh.example deployment_settings.sh`
