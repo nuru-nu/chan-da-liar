@@ -57,6 +57,13 @@ const LOCALE_SELECTION = new Set([
   'en-US', 'en-GB', 'de-DE', 'de-CH',
 ]);
 
+
+const cleanRegex = /<[^>]*>|\[[^\]]*\]|\([^)]*\)/g;
+function parseContent(content: string) {
+  content = content.replace(cleanRegex, '');
+  return { content };
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -273,6 +280,7 @@ export class AzureCognitiveService {
       const style_close = speechConfig.style ? `</mstts:express-as>` : '';
       // const style_open = '', style_close = '';
       const lang = speechConfig.voiceShortName?.substring(0, 5);
+      const { content } = parseContent(rec.content);
       const ssml = `
       <speak version="1.0"
           xmlns="http://www.w3.org/2001/10/synthesis"
@@ -281,7 +289,7 @@ export class AzureCognitiveService {
         <voice name="${speechConfig.voiceShortName}">
           ${style_open}
             <prosody rate="${pm}${(100*(rate-1)).toFixed(2)}%">
-              ${rec.content}
+              ${content}
             </prosody>
           ${style_close}
         </voice>
