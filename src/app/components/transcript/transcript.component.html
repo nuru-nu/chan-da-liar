@@ -32,8 +32,8 @@
 
         <!-- <div>{{dump(message)}}</div> -->
     
-        <div *ngIf="message.completed && message.prefix" title="{{ message.prefix }}">
-          (prefixed)
+        <div class="text-xs self-center" *ngIf="message.completed && message.prefix" title="{{ message.prefix }}">
+          (prefix{{ prefixNumber(message.prefix) }})&nbsp;
         </div>
 
         <div

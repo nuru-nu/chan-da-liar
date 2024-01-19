@@ -118,6 +118,12 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
     this.expanded = !this.expanded;
   }
 
+  private prefixes = new Set<string>();
+  prefixNumber(prefix: string) {
+    this.prefixes.add(prefix);
+    return this.prefixes.size;
+  }
+
   displayMessage(message: CompletedConversationMessage) {
     if (message.role === "system" && !this.expanded) {
       return message.text.substring(0, 120) + '...';

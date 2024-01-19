@@ -161,6 +161,11 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
       'system': 'System',
     }[role];
   }
+  private prefixes = new Set<string>();
+  prefixNumber(prefix: string) {
+    this.prefixes.add(prefix);
+    return this.prefixes.size;
+  }
   messageHtml(message: CompletedConversationMessage) {
     if ('undefined' === typeof message.originalText) {
       return escapeHtml(message.text);
