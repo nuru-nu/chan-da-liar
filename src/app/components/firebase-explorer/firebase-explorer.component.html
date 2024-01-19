@@ -137,8 +137,7 @@
               <span class="text-xs" *ngIf="cc.completed && cc.prefix" title="{{ cc.prefix }}">
                 (prefix{{ prefixNumber(cc.prefix) }})&nbsp;
               </span>
-              <span *ngIf="!isEllipsable(cc.text)"
-                    [ngClass]="cc.decision === 'skip' ? 'line-through' : ''"
+              <span [ngClass]="cc.decision === 'skip' ? 'line-through' : ''"
                     [innerHTML]="messageHtml(cc)">
               </span>
             </div>
