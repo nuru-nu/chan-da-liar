@@ -134,7 +134,7 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   }
 
   getMessageTitle(message: ConversationMessage) {
-    if (this.debugMode) {
+    if (message.completed && this.debugMode) {
       return JSON.stringify(message, null, 2);
     } else {
       return "";
