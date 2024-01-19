@@ -21,8 +21,6 @@ export class AppMainComponent {
 
   state$ = this.chanDaLiar.state$;
   overrideMode$ = this.app.state$.pipe(map(state => state.overrideMode));
-  liveEditMode$ = this.app.state$.pipe(map(state => state.overrideMode && state.livePresetEdit))
-
   expandedPrerecordings: boolean = false;
 
   constructor(

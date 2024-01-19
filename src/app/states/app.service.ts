@@ -4,7 +4,7 @@ import { Observable, combineLatest, map, mergeMap } from "rxjs";
 
 export interface AppState {
   overrideMode: boolean;
-  livePresetEdit: boolean
+  debugMode: boolean
 }
 
 @Injectable({
@@ -12,20 +12,20 @@ export interface AppState {
 })
 export class AppService {
   private configOverrideModeKey = 'app-override-mode';
-  private configLivePresetEditKey = 'app-live-preset-edit';
+  private configDebugModeKey = 'app-debug-mode';
 
   state$: Observable<AppState> = combineLatest([
     this.config.watch<boolean>(this.configOverrideModeKey, true),
-    this.config.watch<boolean>(this.configLivePresetEditKey, true),
+    this.config.watch<boolean>(this.configDebugModeKey, false),
   ]).pipe(
-    map(([overrideMode, livePresetEdit]) => ({
+    map(([overrideMode, debugMode]) => ({
       overrideMode: !!overrideMode,
-      livePresetEdit: !!livePresetEdit,
+      debugMode: !!debugMode,
     }))
   );
 
-  setLivePreset(value: boolean) {
-    this.config.save(this.configLivePresetEditKey, value);
+  setDebugMode(value: boolean) {
+    this.config.save(this.configDebugModeKey, value);
   }
 
   setOverrideMode(value: boolean) {

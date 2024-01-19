@@ -11,6 +11,7 @@
 
 
     <ng-container *ngIf="appState$ | async as appState">
+
       <app-box-container class="flex justify-between space-x-3">
         <app-explaination
           [heading]="'Override Mode'"
@@ -26,16 +27,17 @@
 
       <app-box-container class="flex justify-between space-x-3" *ngIf="appState.overrideMode">
         <app-explaination
-          [heading]="'Live Edit Mode'"
-          [description]="'Edit responses by keyboard'">
+          [heading]="'Debug Mode'"
+          [description]="'Enable additional debug functionality'">
         </app-explaination>
 
         <app-toggle
           tabindex="-1"
-          [enabled]="appState.livePresetEdit"
-          (enabledChanged)="setLiveEdit($event)">
+          [enabled]="appState.debugMode"
+          (enabledChanged)="setDebugMode($event)">
         </app-toggle>
       </app-box-container>
+
     </ng-container>
 
   </div>

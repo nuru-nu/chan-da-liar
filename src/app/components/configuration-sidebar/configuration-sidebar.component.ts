@@ -99,8 +99,8 @@ export class ConfigurationSidebarComponent implements ModalInstance<void> {
     this.app.setOverrideMode(developer);
   }
 
-  setLiveEdit(liveEdit: boolean) {
-    this.app.setLivePreset(liveEdit);
+  setDebugMode(liveEdit: boolean) {
+    this.app.setDebugMode(liveEdit);
   }
 
   dismiss() {
