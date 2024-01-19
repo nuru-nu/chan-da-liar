@@ -44,12 +44,18 @@ const baseLightValueSpeak = 40;
 
 let direction = 1;
 let currentIdle = baseLightValueIdleMin;
+const ids = new Set();
 
 process.on('SIGINT', () => {
   console.log('caught SIGINT => turn off lights + shut down');
   idle = false;
   net.set(universe, channel, [0]);
-  setTimeout(process.exit, 100);
+  for (const id of ids) window.clearTimeout(id);
+  console.log('cleared', ids.size, 'timeouts');
+  window.setTimeout(() => {
+    net.set(universe, channel, [0]);
+    process.exit();
+  }, 100);
 });
 
 
@@ -79,13 +85,16 @@ app.post('', (req, res) => {
     if (verbose) console.log('visums.length', visums.length);
     idle = false;
     for(const visum of transform(visums)) {
-      setTimeout(() => {
+      const id = setTimeout(() => {
+        ids.delete(id);
         // https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/how-to-speech-synthesis-viseme?pivots=programming-language-csharp&tabs=visemeid#map-phonemes-to-visemes
         net.set(universe, channel, [visum.value + baseLightValueSpeak]);
       }, visum.offset);
+      ids.add(id);
     }
 
-    setTimeout(() => {
+    const id = setTimeout(() => {
+      ids.delete(id);
       idle = true;
       idling();
     }, visums[visums.length-1].offset + 100);
