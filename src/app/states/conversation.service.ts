@@ -163,6 +163,29 @@ export class ConversationService {
     keyboard.registerExclusive('ArrowUp', (e: KeyboardEvent) => this.undecide());
     keyboard.registerExclusive('KeyS', (e: KeyboardEvent) => this.split(e.shiftKey));
     keyboard.registerExclusive('KeyM', (e: KeyboardEvent) => this.merge(e.shiftKey));
+    keyboard.registerExclusive('KeyQ', (e: KeyboardEvent) => this.toggleRegie());
+  }
+
+  private toggleRegie() {
+    const highlight = this.highlightSubject.value;
+    if (!highlight || !highlight.completed || highlight.role !== 'user') return;
+    let text = highlight.text;
+    const m = text.match(/(.*)(\[[^\]]+\])/);
+    const regies = [
+      '[sarcasm]',
+      '[dry humour]',
+      '[angry]',
+    ];
+    if (m) {
+      const idx = regies.indexOf(m[2]);
+      text = `${m[1]}${regies[(idx + 1) % regies.length]}`;
+    } else {
+      text = `${text} ${regies[0]}`;
+    }
+    const messages = this.messagesSubject.value;
+    const idx = messages.findIndex(m => m.id === highlight.id);
+    messages[idx] = {...(messages as CompletedConversationMessage[])[idx], text};
+    this.nextMessages(messages);
   }
 
   private split(toTheEnd?: boolean) {
