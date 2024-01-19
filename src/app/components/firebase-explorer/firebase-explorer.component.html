@@ -1,3 +1,5 @@
+<div *ngIf="appState$ | async as appState">
+
 <div
   *ngIf="state$ | async as state"
   class="p-6"
@@ -129,6 +131,7 @@
               </span>
             </div>
             <div *ngIf="cc.role !== 'system'"
+                title="{{ getRoleTitle(cc, appState.debugMode) }}"
                 [ngClass]="cc.role === 'assistant' ? 'pl-6' : 'pr-6'">
               <span class="text-xs">{{ fmtRole(cc.role) }}:&nbsp;</span>
               <span class="text-xs" *ngIf="cc.completed && cc.prefix" title="{{ cc.prefix }}">
@@ -146,4 +149,5 @@
 
   </div> <!-- conversations -->
 
+</div>
 </div>

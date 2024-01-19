@@ -7,6 +7,7 @@ import { faEyeSlash, faLink, faPen, faSpinner, faStar as faSolidStar, faEye } fr
 import { faStar } from '@fortawesome/free-regular-svg-icons';
 import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
 import { ToastsService } from 'src/app/toasts.service';
+import { AppService } from 'src/app/states/app.service';
 
 const COLORS_N = 6;
 const SYSTEM_ELLIPSIS_LENGTH = 30;
@@ -31,6 +32,7 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
   linkIcon = faLink;
 
   state$ = this.explorer.state$;
+  appState$ = this.app.state$;
 
   private expanded = new Set<ConversationKey>();
   private editingTitle: ConversationKey | null = null;;
@@ -38,6 +40,7 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
   constructor(
     private explorer: FirebaseExplorerService,
     private toasts: ToastsService,
+    private app: AppService,
   ) {
     if (explorer.initialLoad) {
       explorer.initialLoad = false;
@@ -153,6 +156,13 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
   }
   isEllipsable(message: string) {
     return message.split(' ').length > SYSTEM_ELLIPSIS_LENGTH;
+  }
+  getRoleTitle(message: CompletedConversationMessage, debug: boolean) {
+    if (debug) {
+      return JSON.stringify(message, null, 2);
+    } else {
+      return "";
+    }
   }
   fmtRole(role: ConversationRole) {
     return {

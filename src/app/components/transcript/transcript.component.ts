@@ -54,6 +54,7 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   private sortedMessageIds: number[] | null = null;
   expanded = false;
   developer = false;
+  debugMode = false;
 
   editing: number|null = null;
   needsfocus = false;
@@ -66,6 +67,7 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   ) {
     app.state$.subscribe(state => {
       this.developer = state.overrideMode;
+      this.debugMode = state.debugMode;
     });
     this.messages$.subscribe(messages => {
       const messageIds = messages.map(m => m.id);
@@ -131,6 +133,13 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
     return message.text;
   }
 
+  getMessageTitle(message: ConversationMessage) {
+    if (this.debugMode) {
+      return JSON.stringify(message, null, 2);
+    } else {
+      return "";
+    }
+  }
   messageHtml(message: CompletedConversationMessage) {
     if ('undefined' === typeof message.originalText) {
       return escapeHtml(message.text);

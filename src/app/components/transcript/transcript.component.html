@@ -14,6 +14,7 @@
     <div
       *ngFor="let message of messages$ | async; let i = index; trackBy: trackMessage"
       class="flex"
+      title="{{ getMessageTitle(message) }}"
       [ngClass]="[
       message.completed && message.highlight ? 'highlight' : '',
       message.role === 'assistant' ? 'justify-end' : 'justify-start',
