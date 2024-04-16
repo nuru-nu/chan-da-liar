@@ -154,6 +154,7 @@ export class OpenAiService {
       this.firebase.addCost(cost, 'openai');
       this.config.save(this.totalCostKey, oldCost + cost);
     }).catch(error => {
+      recognizer.complete();
       console.log('Could not prompt openai', error);
     });
 
