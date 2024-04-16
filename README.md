@@ -50,6 +50,35 @@ Select a locale and the desired voice model. Get an impression with the transcri
 Create an account with billing information and create an API Key [here](https://platform.openai.com/account/api-keys)
 ![OpenAI](docs/OpenAI.png)
 
+### llama.cpp
+
+The "Open AI" panel has an extra model "llama.cpp" that will connect to `http://localhost:8080` and expect a llama.cpp server running there. Example commands to download Mistral-7B-v0.1 and start the local server (on OS X):
+
+```bash
+# Download model from Huggingface
+cd ~/Downloads
+brew install git-lfs
+git lfs install
+git clone https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1
+
+# Make llama.cpp (defaults to Metal implementation)
+cd ~/git
+git clone https://github.com/ggerganov/llama.cpp
+cd llama.cpp
+make -j
+
+# Convert/quantize checkpoint
+python3 -m venv venv
+source venv/bin/activate\n
+python3 -m pip install -r requirements.txt\n
+python3 convert.py ~/Downloads/mistral-7B-v0.1/
+./quantize ~/Downloads/mistral-7B-v0.1/ggml-model-f16.gguf ~/Downloads/mistral-7B-v0.1/ggml-model-q4_0.gguf q4_0
+
+# Run with long enough context
+./server -m ~/Downloads/Mistral-7B-Instruct-v0.1/ggml-model-f16.gguf -c 8000 \
+| tee "server_$(date +%Y%m%d_%H%M%S).log"
+```
+
 ### Firebase
 
 Firebase is an online database that can be used to manage user data without a dedicated server setup (i.e. everything other than the firebase runs in the frontend in the browser).
