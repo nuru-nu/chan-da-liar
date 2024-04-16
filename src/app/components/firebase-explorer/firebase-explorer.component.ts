@@ -3,7 +3,7 @@ import { ModalHandle, ModalInstance } from '../../modules/modal/modal.service';
 import { ConversationKey, ConversationSummary, makeConversationKey } from 'src/app/states/firebase.service';
 import { CompletedConversationMessage, ConversationRole } from 'src/app/states/conversation.service';
 import { FirebaseExplorerService, FirebaseExplorerState } from 'src/app/firebase-explorer.service';
-import { faEyeSlash, faLink, faPen, faSpinner, faStar as faSolidStar, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faEyeSlash, faLink, faPen, faSpinner, faStar as faSolidStar, faEye, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { faStar } from '@fortawesome/free-regular-svg-icons';
 import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
 import { ToastsService } from 'src/app/toasts.service';
@@ -29,6 +29,7 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
   eyeSlashIcon = faEyeSlash;
   eyeIcon = faEye;
   penIcon = faPen;
+  penToSquareIcon = faPenToSquare;
   linkIcon = faLink;
 
   state$ = this.explorer.state$;

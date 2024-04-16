@@ -73,7 +73,6 @@
             <div class="flex gap-3">
               <div *ngIf="!isEditingTitle(c.uid, c.id)"
                    class="cursor-pointer"
-                   (click)="toggleEditTitle($event, c.uid, c.id)"
                    >
                 {{c.notes?.title || 'Untitled Conversation'}}
               </div>
@@ -91,7 +90,12 @@
               </div>
               <fa-icon [icon]="penIcon"
                       class="cursor-pointer text-gray-400 hover:text-gray-900"
-                      title="duplicate conversation"
+                      title="edit title"
+                      (click)="toggleEditTitle($event, c.uid, c.id)"
+              ></fa-icon>
+              <fa-icon [icon]="penToSquareIcon"
+                      class="cursor-pointer text-gray-400 hover:text-gray-900"
+                      title="load (duplicate) conversation="
                       (click)="loadConversation($event, c.uid, c.id)"
               ></fa-icon>
               <fa-icon [icon]="c.notes?.starred ? solidStarIcon : starIcon"
