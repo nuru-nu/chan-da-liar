@@ -33,6 +33,15 @@
       </select>
     </label>
 
+    <!-- https://play.tailwindcss.com/xC4BRoS2kn -->
+    <div *ngIf="state.props" class="relative">
+      <label class="absolute top-1 right-3 text-sm text-gray-500 right-1 select-none text-right">
+        props
+      </label>
+      <div class="bg-gray-200 border rounded-md text-gray-700 px-3 py-2 whitespace-pre font-mono text-xs overflow-y-auto min-h-16 max-h-32"
+          >{{pprint(state.props)}}</div>
+    </div>
+
     <app-textarea (valueChange)="setRolePlay($event)" [value]="state.rolePlayScript ?? ''"
       [heading]="'Chan Da Liar Prescript'"
       class="flex-grow min-h-0"></app-textarea>

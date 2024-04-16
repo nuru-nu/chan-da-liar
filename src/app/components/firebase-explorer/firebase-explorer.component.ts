@@ -138,7 +138,22 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
   }
   fmtSummary2(summary: ConversationSummary) {
     const maybeDelay = summary.maxDelayMs ? ` – delay ⌀${summary.averageDelayMs}ms (max ${summary.maxDelayMs})` : '';
-    return `${summary.settings?.model || '?'} – ${summary.messages} messages / ${summary.words} words (Deliar ${summary.deliarMessages}/${summary.deliarWords})${maybeDelay}`;
+    let model = summary.settings?.model || '?';
+    if (summary.settings?.props) {
+      try {
+        const props = JSON.parse(summary.settings.props).default_generation_settings;
+        const parts = props.model.split('/')
+        const ckpt = parts[parts.length - 2];
+        const n_ctx = props.n_ctx;
+        const t = props.temperature.toFixed(2);
+        const top_p = props.top_p.toFixed(2);
+        const penalty = props.repeat_penalty.toFixed(1);
+        model += ` (${ckpt}, n_ctx=${n_ctx}, t=${t}, top_p=${top_p}, penalty=${penalty})`
+      } catch (err) {
+        console.log('Cannot parse model props', summary.settings.props, err);
+      }
+    }
+    return `${model} – ${summary.messages} messages / ${summary.words} words (Deliar ${summary.deliarMessages}/${summary.deliarWords})${maybeDelay}`;
   }
   isExpanded(uid: string, id: number) {
     return this.expanded.has(makeConversationKey(uid, id));

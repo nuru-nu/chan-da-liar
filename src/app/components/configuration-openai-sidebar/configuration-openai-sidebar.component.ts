@@ -24,4 +24,13 @@ export class ConfigurationOpenaiSidebarComponent {
   setRolePlay(script: string) {
     this.openAi.setRolePlay(script)
   }
+
+  pprint(props: string) {
+    try {
+      return JSON.stringify(JSON.parse(props), null, 2);
+    } catch (e) {
+      console.log('Cannot pretty print props', props, e);
+      return props
+    }
+  }
 }

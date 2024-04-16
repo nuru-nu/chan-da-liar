@@ -31,12 +31,17 @@ export interface OpenAIState {
   selectedModel: Model | null;
   ready: boolean;
   error: string | null;
+  props: string | null;
 }
 
 export interface PromptMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
+
+const OAI_BASE_URL = 'https://api.openai.com/v1';
+const LOCALHOST_BASE_URL = 'http://127.0.0.1:8080';
+export const LLAMA_CPP_MODEL_ID = 'llama.cpp';
 
 @Injectable({
   providedIn: 'root',
@@ -82,7 +87,7 @@ export class OpenAiService {
       } else {
         this.managedSettings.next(null);
       }
-    })
+    });
   }
 
   async prompt(messages: PromptMessage[]): Promise<OngoingRecognition> {
@@ -98,7 +103,9 @@ export class OpenAiService {
       return recognizer.recognition();
     }
 
-    fetch('https://api.openai.com/v1/chat/completions', {
+    const model = (await firstValueFrom(this.state$)).selectedModel?.id ?? '';
+    const base_url = model === LLAMA_CPP_MODEL_ID ? LOCALHOST_BASE_URL : OAI_BASE_URL;
+    fetch(`${base_url}/chat/completions`, {
       method: 'post',
       headers: new Headers({
         // https://platform.openai.com/account/usage
@@ -165,7 +172,11 @@ export class OpenAiService {
     // This triggers a "Refused to set unsafe header" error because
     // https://github.com/openai/openai-node/issues/6
     const result = await openai.listModels();
-    return result.data.data.filter((d) => d.owned_by === 'openai');
+    const oai_models = result.data.data.filter((d) => d.owned_by === 'openai');
+    return [
+        {id: LLAMA_CPP_MODEL_ID, object: '', created: 0, owned_by: '?'},
+        ...oai_models
+    ];
   }
 
   setKey(key: string) {
@@ -191,10 +202,18 @@ export class OpenAiService {
     const completionTokens = this.countTokens(completion);
     // https://openai.com/pricing
     const model = (await firstValueFrom(this.state$)).selectedModel?.id ?? '';
-    const cost = 
-    model.startsWith('gpt-4')
-    ? 0.03 * promptTokens / 1000 + 0.06 * completionTokens / 1000
-    : 0.002 * promptTokens / 1000 + 0.002 * completionTokens / 1000;
+    const costsPerToken  = {prompt: 0.002, completion: 0.002};
+    if (model.startsWith('gpt-4')) {
+      costsPerToken.prompt = 0.03;
+      costsPerToken.completion = 0.06;
+    } else if (model === LLAMA_CPP_MODEL_ID) {
+      costsPerToken.prompt = 0;
+      costsPerToken.completion = 0;
+    }
+    const cost = (
+        costsPerToken.prompt * promptTokens / 1000 +
+        costsPerToken.completion * completionTokens / 1000
+    );
     // console.log('getCost', model, promptTokens, completionTokens, '->', cost);
     return cost;
   }
@@ -218,6 +237,7 @@ export class OpenAiService {
         managed: false,
         openai: null,
         error: null,
+        props: null,
       };
     }
 
@@ -225,7 +245,7 @@ export class OpenAiService {
       const configuration = new Configuration({
         apiKey: key!,
       });
-      return new OpenAIApi(configuration);
+      return new OpenAIApi(configuration, OAI_BASE_URL);
     });
 
     let error = '';
@@ -241,6 +261,14 @@ export class OpenAiService {
     );
     const model = models.find((m) => m.id === selectedModel) ?? null;
 
+    let props = null;
+    if (!error && selectedModel === LLAMA_CPP_MODEL_ID) {
+      try {
+        props = await (await fetch(`${LOCALHOST_BASE_URL}/props`)).text();
+      } catch (err) {
+        error = 'Could not fetch props from local llama.cpp server!';
+      }
+    }
 
     this.currentState = {
       ready: model !== null,
@@ -251,6 +279,7 @@ export class OpenAiService {
       openai,
       error,
       models,
+      props,
     };
     return this.currentState;
   }

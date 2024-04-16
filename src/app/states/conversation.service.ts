@@ -58,6 +58,7 @@ export type ConversationMessage =
 export interface ConversationSettings {
   model: string|null;
   parent?: number;
+  props?: string;
 }
 
 class MessageBuilder {
@@ -147,6 +148,7 @@ export class ConversationService {
       this.settings.next({
         ...this.settings.value,
         model: state.selectedModel?.id || null,
+        ...(state.props ? {props: state.props} : {}),
       });
     });
 
