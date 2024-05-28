@@ -124,8 +124,6 @@ export class OpenAiService {
         return;
       }
 
-      recognizer.setInitialDelay(Date.now() - t0);
-
       const reader = response.body
         .pipeThrough(new TextDecoderStream())
         .getReader();
@@ -137,8 +135,13 @@ export class OpenAiService {
 
       let done = false, completion = '';
 
+      let initialDelayMs = 0;
       do {
         const { value, done } = await reader.read();
+        if (!initialDelayMs) {
+          initialDelayMs = Date.now() - t0;
+          recognizer.setInitialDelay(initialDelayMs);
+        }
         if (done) break;
         for (const line of value.split(/\n\n/g)) {
           if (!line.startsWith('data: ')) continue;
