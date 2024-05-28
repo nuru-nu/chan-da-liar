@@ -8,6 +8,7 @@ import { faStar } from '@fortawesome/free-regular-svg-icons';
 import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
 import { ToastsService } from 'src/app/toasts.service';
 import { AppService } from 'src/app/states/app.service';
+import { OpenAiService } from 'src/app/states/open-ai.service';
 
 const COLORS_N = 6;
 const SYSTEM_ELLIPSIS_LENGTH = 30;
@@ -42,6 +43,7 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
     private explorer: FirebaseExplorerService,
     private toasts: ToastsService,
     private app: AppService,
+    private openai: OpenAiService,
   ) {
     if (explorer.initialLoad) {
       explorer.initialLoad = false;
@@ -140,17 +142,9 @@ export class FirebaseExplorerComponent implements ModalInstance<void> {
     const maybeDelay = summary.maxDelayMs ? ` – delay ⌀${summary.averageDelayMs}ms (max ${summary.maxDelayMs})` : '';
     let model = summary.settings?.model || '?';
     if (summary.settings?.props) {
-      try {
-        const props = JSON.parse(summary.settings.props).default_generation_settings;
-        const parts = props.model.split('/')
-        const ckpt = parts[parts.length - 2];
-        const n_ctx = props.n_ctx;
-        const t = props.temperature.toFixed(2);
-        const top_p = props.top_p.toFixed(2);
-        const penalty = props.repeat_penalty.toFixed(1);
-        model += ` (${ckpt}, n_ctx=${n_ctx}, t=${t}, top_p=${top_p}, penalty=${penalty})`
-      } catch (err) {
-        console.log('Cannot parse model props', summary.settings.props, err);
+      const formattedProps = this.openai.formatProps(summary.settings.props);
+      if (formattedProps) {
+        model += ` (${formattedProps})`;
       }
     }
     return `${model} – ${summary.messages} messages / ${summary.words} words (Deliar ${summary.deliarMessages}/${summary.deliarWords})${maybeDelay}`;

@@ -1,7 +1,7 @@
 <!-- https://play.tailwindcss.com/s7psQsOC6Q -->
 
 <div class="flex justify-between px-3 py-1">
-  <span class="text-gray-400 text-xs">Transcript ({{ (settings$ | async)?.model }}) – id=<code>{{conversationId$ | async}}</code>, created {{formatCreated(conversationId$ | async)}}</span>
+  <span class="text-gray-400 text-xs">Transcript ({{ (settings$ | async)?.model }} {{ formatProps((settings$ | async)?.props) }}) – id=<code>{{conversationId$ | async}}</code>, created {{formatCreated(conversationId$ | async)}}</span>
   <button class="text-xs text-black text-right w-12" (click)="clear()">
     Clear
   </button>

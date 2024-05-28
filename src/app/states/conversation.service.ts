@@ -58,6 +58,8 @@ export type ConversationMessage =
 export interface ConversationSettings {
   model: string|null;
   parent?: number;
+  // LLAMA_CPP - {default_generation_settings: {model, n_ctx, ...}}
+  // OLLAMA - {details: {family, format, parameter_size, quantization_level}}
   props?: string;
 }
 

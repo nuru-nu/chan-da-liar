@@ -50,9 +50,14 @@ Select a locale and the desired voice model. Get an impression with the transcri
 Create an account with billing information and create an API Key [here](https://platform.openai.com/account/api-keys)
 ![OpenAI](docs/OpenAI.png)
 
+
+### ollama
+
+Ollama is really plug'n'play: just download the app from https://ollama.com/ and run `ollama pull llama3` in the shell. Done 😎.
+
 ### llama.cpp
 
-The "Open AI" panel has an extra model "llama.cpp" that will connect to `http://localhost:8080` and expect a llama.cpp server running there. Example commands to download Mistral-7B-v0.1 and start the local server (on OS X):
+The "Open AI" panel has an extra model "llama.cpp" that will connect to `http://localhost:8000` and expect a llama.cpp server running there. Example commands to download Mistral-7B-v0.1 and start the local server (on OS X):
 
 ```bash
 # Download model from Huggingface
@@ -75,7 +80,7 @@ python3 convert.py ~/Downloads/mistral-7B-v0.1/
 ./quantize ~/Downloads/mistral-7B-v0.1/ggml-model-f16.gguf ~/Downloads/mistral-7B-v0.1/ggml-model-q4_0.gguf q4_0
 
 # Run with long enough context
-./server -m ~/Downloads/Mistral-7B-Instruct-v0.1/ggml-model-f16.gguf -c 8000 \
+./server -m ~/Downloads/Mistral-7B-Instruct-v0.1/ggml-model-f16.gguf --port 8000 -c 8000 \
 | tee "server_$(date +%Y%m%d_%H%M%S).log"
 ```
 

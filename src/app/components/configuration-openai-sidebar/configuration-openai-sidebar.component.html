@@ -16,6 +16,13 @@
       </div>
     </div>
 
+    <div>
+      We support both
+      <a href="https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md" target="_blank"><code>llama.cpp</code></a> (localhost:8000)
+      and
+      <a href="https://github.com/ollama/ollama/blob/main/docs/api.md" target="_blank"><code>ollama</code></a> (localhost:11434).
+    </div>
+
     <div *ngIf="state.error" class="bg-orange-100 border rounded-md border-orange-700 text-orange-700 px-3 py-2">
       {{state.error}}
     </div>

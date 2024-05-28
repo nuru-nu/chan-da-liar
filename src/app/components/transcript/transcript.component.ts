@@ -23,6 +23,7 @@ import { combineLatest, interval } from 'rxjs';
 import { PrerecordingService } from 'src/app/states/prerecording.service';
 import { AppService } from 'src/app/states/app.service';
 import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
+import { OpenAiService } from 'src/app/states/open-ai.service';
 
 @Component({
   selector: 'app-transcript',
@@ -64,6 +65,7 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
     private conversation: ConversationService,
     private prerecordings: PrerecordingService,
     app: AppService,
+    private openai: OpenAiService,
   ) {
     app.state$.subscribe(state => {
       this.developer = state.overrideMode;
@@ -152,6 +154,13 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
       content: message.text,
       rate: undefined,
     });
+  }
+
+  formatProps(props: string | undefined) {
+    if (props) {
+      return this.openai.formatProps(props) || '';
+    }
+    return '';
   }
 
   async speakMessage(message: CompletedConversationMessage) {
