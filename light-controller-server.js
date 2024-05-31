@@ -1,5 +1,17 @@
+
 const artnet = require('artnet')
 const express = require('express');
+const mqtt = require('mqtt');
+
+const mqttHost = process.env.MQTT_HOST || '127.0.0.1';
+const vintageDevices = ['3494546EF893'];
+
+const client = mqtt.connect(`mqtt://${mqttHost}:1883`);
+if (client) {
+  client.on('connect', () => {
+    console.log('mqtt connected');
+  });
+}
 
 require('pyextjs')
 
@@ -46,14 +58,40 @@ let direction = 1;
 let currentIdle = baseLightValueIdleMin;
 const ids = new Set();
 
+function sendShelly(value) {
+  if (!client) {
+    return;
+  }
+
+  try {
+    // for (const device of colorDevices) {
+    //   client.publish(`shellies/shellycolorbulb-${device}/color/0/set`, JSON.stringify(data));
+    // }
+    for (const device of vintageDevices) {
+      client.publish(`shellies/ShellyVintage-${device}/light/0/set`, JSON.stringify({
+        turn: 'on',
+        brightness: Math.round(value / 3),  // TODO: Set correct range.
+        transition: 0,
+      }));
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function setLight(value) {
+  sendShelly(value);
+  net.set(universe, channel, [value]);
+}
+
 process.on('SIGINT', () => {
   console.log('caught SIGINT => turn off lights + shut down');
   idle = false;
-  net.set(universe, channel, [0]);
+  setLight(0);
   for (const id of ids) window.clearTimeout(id);
   console.log('cleared', ids.size, 'timeouts');
   window.setTimeout(() => {
-    net.set(universe, channel, [0]);
+    setLight(0);
     process.exit();
   }, 100);
 });
@@ -66,7 +104,7 @@ function idling() {
   if(currentIdle < baseLightValueIdleMin || currentIdle > baseLightValueIdleMax) {
     direction *= -1;
   }
-  net.set(universe, channel, [currentIdle]);
+  setLight(currentIdle);
   setTimeout(idling, 100);
 }
 idling();
@@ -88,7 +126,7 @@ app.post('', (req, res) => {
       const id = setTimeout(() => {
         ids.delete(id);
         // https://learn.microsoft.com/en-us/azure/cognitive-services/speech-service/how-to-speech-synthesis-viseme?pivots=programming-language-csharp&tabs=visemeid#map-phonemes-to-visemes
-        net.set(universe, channel, [visum.value + baseLightValueSpeak]);
+        setLight(visum.value + baseLightValueSpeak);
       }, visum.offset);
       ids.add(id);
     }

@@ -7,14 +7,14 @@ Hosted demo can be viewed here https://nuru.nu/chan-da-liar/
 
 Tested with node v18.11.0
 
-```
+```bash
 npm install
 npm start
 ```
 
 In the venue, you'll also have to start the lights server:
 
-```
+```bash
 node light-controller-server.js
 ```
 
@@ -82,6 +82,25 @@ python3 convert.py ~/Downloads/mistral-7B-v0.1/
 # Run with long enough context
 ./server -m ~/Downloads/Mistral-7B-Instruct-v0.1/ggml-model-f16.gguf --port 8000 -c 8000 \
 | tee "server_$(date +%Y%m%d_%H%M%S).log"
+```
+
+
+### Light server
+
+
+The binary `light-controller-server.js` is required because the main app cannot communicate directly with other (non-https) servers in the local network. Connected lights should start flickering once the server is started  (even in the absence of any activity).
+
+It controls two systems:
+
+1. A DMX-controlled light via `artnet`.
+2. Shelly lights: this setup requires the installation of `rabbitmq` and the plugin `rabbitmq_mqtt` on the host computer first (controlling Shelly via http has much more lag). Installation can be verified by accessing the management console http://localhost:15672/ (default username/password: guest/guest). Once the script `light-controller-server.js` is running, it should show up in the "Connections" tab. The Shelly light fixtures must first be connected to the local network (which can be done via the Shelly App after turning it on/off 5x). Then, through their management console (port 80), they need to be connected to MQTT in the "security" / "network" / "advanced developer" options. A restart might be needed. After this, they should also show up in the "Connections" tab.
+
+On OS X, `rabbitmq` can be installed via `brew`:
+
+```bash
+brew install rabbitmq
+/opt/homebrew/opt/rabbitmq/sbin/rabbitmq-plugins enable rabbitmq_mqtt
+CONF_ENV_FILE="/opt/homebrew/etc/rabbitmq/rabbitmq-env.conf" /opt/homebrew/opt/rabbitmq/sbin/rabbitmq-server
 ```
 
 ### Firebase

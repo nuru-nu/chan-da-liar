@@ -34,6 +34,7 @@
     "diff": "^5.1.0",
     "firebase": "^9.21.0",
     "microsoft-cognitiveservices-speech-sdk": "^1.27.0",
+    "mqtt": "^5.7.0",
     "openai": "^3.2.1",
     "papaparse": "^5.4.1",
     "pyextjs": "^0.1.2",
