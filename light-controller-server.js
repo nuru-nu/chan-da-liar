@@ -6,7 +6,13 @@ const mqtt = require('mqtt');
 const mqttHost = process.env.MQTT_HOST || '127.0.0.1';
 const vintageDevices = ['3494546EF893'];
 
-const client = mqtt.connect(`mqtt://${mqttHost}:1883`);
+const client = mqtt.connect({
+  host: mqttHost,
+  port: 1883,
+  // Note: default 'guest' user only works on localhost!
+  // username: 'server', password: 'server',
+  username: 'guest', password: 'guest',
+});
 if (client) {
   client.on('connect', () => {
     console.log('mqtt connected');
@@ -70,7 +76,7 @@ function sendShelly(value) {
     for (const device of vintageDevices) {
       client.publish(`shellies/ShellyVintage-${device}/light/0/set`, JSON.stringify({
         turn: 'on',
-        brightness: Math.round(value / 3),  // TODO: Set correct range.
+        brightness: Math.round(value / 255 * 100 * 2),  // (make it a bit brighter)
         transition: 0,
       }));
     }

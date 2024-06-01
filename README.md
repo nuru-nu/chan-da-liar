@@ -94,14 +94,22 @@ It controls two systems:
 
 1. A DMX-controlled light via `artnet`.
 2. Shelly lights: this setup requires the installation of `rabbitmq` and the plugin `rabbitmq_mqtt` on the host computer first (controlling Shelly via http has much more lag). Installation can be verified by accessing the management console http://localhost:15672/ (default username/password: guest/guest). Once the script `light-controller-server.js` is running, it should show up in the "Connections" tab. The Shelly light fixtures must first be connected to the local network (which can be done via the Shelly App after turning it on/off 5x). Then, through their management console (port 80), they need to be connected to MQTT in the "security" / "network" / "advanced developer" options. A restart might be needed. After this, they should also show up in the "Connections" tab.
+3. Important note: you need to create users to connect to the MQTT server. The default user `guest` can only connect from localhost!
 
 On OS X, `rabbitmq` can be installed via `brew`:
 
 ```bash
+# installation
 brew install rabbitmq
 /opt/homebrew/opt/rabbitmq/sbin/rabbitmq-plugins enable rabbitmq_mqtt
+# start server
 CONF_ENV_FILE="/opt/homebrew/etc/rabbitmq/rabbitmq-env.conf" /opt/homebrew/opt/rabbitmq/sbin/rabbitmq-server
+# set up users (serer already running)
+rabbitmqctl add_user 'blackbox'
+rabbitmqctl set_permissions 'blackbox' '' '.*' '.*'
 ```
+
+BTW you can check for Shelly devices in the local network with `dns-sd -B _http._tcp` followed by `ping -c1 ShellyVintage-3494546EF893.local`.
 
 ### Firebase
 
