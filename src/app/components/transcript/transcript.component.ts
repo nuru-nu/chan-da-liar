@@ -112,7 +112,7 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
   async paste() {
     try {
       const script = await navigator.clipboard.readText();
-      parseScript(script).forEach((message: ScriptMessage) => {
+      parseScript(script).reverse().forEach((message: ScriptMessage) => {
         if (message.role === 'assistant') {
           this.conversation.pushAssistant({content: message.text});
         } else
