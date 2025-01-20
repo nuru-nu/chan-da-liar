@@ -205,7 +205,7 @@ export class OpenAiService {
     const models = [];
     if (oaiModels.status === 'fulfilled') {
       models.push(...oaiModels.value.data.data.filter(
-          (d) => d.owned_by === 'openai'));
+          (d) => d.owned_by === 'openai' || d.owned_by === 'system'));
     } else {
       console.warn('Could not get OpenAi models', oaiModels);
     }
