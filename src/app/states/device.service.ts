@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ConfigService } from '../config.service';
 import { combineLatest, mergeMap, shareReplay } from 'rxjs';
 import {Cache} from '../utils/cache';
-import {ConversationRole} from './conversation.service';
+import { ConversationRole } from './types';
 
 export interface DeviceState {
   hasPermission: boolean

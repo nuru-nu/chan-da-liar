@@ -1,7 +1,8 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { ModalHandle, ModalInstance } from '../../modules/modal/modal.service';
 import { ConversationKey, ConversationSummary, makeConversationKey } from 'src/app/states/firebase.service';
-import { CompletedConversationMessage, ConversationRole } from 'src/app/states/conversation.service';
+import { ConversationRole } from 'src/app/states/types';
+import { CompletedConversationMessage } from "src/app/states/conversation.service";
 import { FirebaseExplorerService, FirebaseExplorerState } from 'src/app/firebase-explorer.service';
 import { faEyeSlash, faLink, faPen, faSpinner, faStar as faSolidStar, faEye, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { faStar } from '@fortawesome/free-regular-svg-icons';

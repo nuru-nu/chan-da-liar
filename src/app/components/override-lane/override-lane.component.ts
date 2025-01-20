@@ -1,7 +1,8 @@
 import { Component, ViewChild } from '@angular/core';
 import { ConversationService } from '../../states/conversation.service';
 import { InputComponent } from '../input/input.component';
-import { PrerecordingService, Recording } from "src/app/states/prerecording.service";
+import { PrerecordingService } from "src/app/states/prerecording.service";
+import { Recording } from 'src/app/states/types';
 import { AppService } from 'src/app/states/app.service';
 import { map } from 'rxjs';
 import { AzureCognitiveService } from 'src/app/states/azure-cognitive.service';

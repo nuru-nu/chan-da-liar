@@ -1,7 +1,10 @@
 <!-- https://play.tailwindcss.com/s7psQsOC6Q -->
 
 <div class="flex justify-between px-3 py-1">
-  <span class="text-gray-400 text-xs">Transcript ({{ (settings$ | async)?.model }} {{ formatProps((settings$ | async)?.props) }}) – id=<code>{{conversationId$ | async}}</code>, created {{formatCreated(conversationId$ | async)}}</span>
+  <span class="grow text-gray-400 text-xs">Transcript ({{ (settings$ | async)?.model }} {{ formatProps((settings$ | async)?.props) }}) – id=<code>{{conversationId$ | async}}</code>, created {{formatCreated(conversationId$ | async)}}</span>
+  <button class="text-xs text-black text-right w-12" (click)="paste()">
+    Paste
+  </button>
   <button class="text-xs text-black text-right w-12" (click)="clear()">
     Clear
   </button>
@@ -32,7 +35,7 @@
       ">
 
         <!-- <div>{{dump(message)}}</div> -->
-    
+
         <div class="text-xs self-center" *ngIf="message.completed && message.prefix" title="{{ message.prefix }}">
           (prefix{{ prefixNumber(message.prefix) }})&nbsp;
         </div>
@@ -57,7 +60,7 @@
             >
         </div>
 
-        <div 
+        <div
             *ngIf="message.completed && message.id === editing"
             class="flex-grow flex"
             >
@@ -78,7 +81,7 @@
             <div *ngIf="message.completed && message.initialDelayMs">{{ message.initialDelayMs }}ms</div>
           </div>
         </div>
-  
+
         <div
           class="icons-top" *ngIf="developer && message.completed">
           <fa-icon [icon]="saveIcon" class="cursor-pointer" (click)="savePrerecording(message)"></fa-icon>

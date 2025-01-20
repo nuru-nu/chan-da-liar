@@ -1,5 +1,5 @@
 import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
-import { ConversationRole } from './conversation.service';
+import { ConversationRole } from './types';
 
 export interface OngoingRecognition {
   role: ConversationRole;

@@ -4,7 +4,7 @@ import {
   DeviceService,
   MicrophoneState,
 } from '../../states/device.service';
-import {ConversationRole} from '../../states/conversation.service';
+import { ConversationRole } from 'src/app/states/types';
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 
 @Component({

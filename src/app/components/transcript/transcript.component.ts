@@ -15,15 +15,16 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { SpeakerService } from '../../states/speaker.service';
 import {
-  CompletedConversationMessage,
   ConversationMessage,
   ConversationService,
 } from '../../states/conversation.service';
+import { CompletedConversationMessage } from "src/app/states/conversation.service";
 import { combineLatest, interval } from 'rxjs';
 import { PrerecordingService } from 'src/app/states/prerecording.service';
 import { AppService } from 'src/app/states/app.service';
 import { escapeHtml, generateHtmlDiff } from 'src/app/utils/formatDiff';
 import { OpenAiService } from 'src/app/states/open-ai.service';
+import { parseScript, ScriptMessage } from 'src/app/utils/scriptUtils';
 
 @Component({
   selector: 'app-transcript',
@@ -47,7 +48,7 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
 
   @ViewChild('messagelist')
   messageList?: ElementRef<HTMLDivElement>;
-  
+
   conversationId$ = this.conversation.conversationId$;
   settings$ = this.conversation.settings$;
   messages$ = this.conversation.messages$;
@@ -106,6 +107,25 @@ export class TranscriptComponent implements OnInit, AfterViewInit {
         part.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     });
+  }
+
+  async paste() {
+    try {
+      const script = await navigator.clipboard.readText();
+      parseScript(script).forEach((message: ScriptMessage) => {
+        if (message.role === 'assistant') {
+          this.conversation.pushAssistant({content: message.text});
+        } else
+        if (message.role === 'user') {
+          this.conversation.pushUser({content: message.text});
+        } else {
+          console.log('Ignoring', message);
+        }
+      });
+    } catch (err) {
+      console.error('Failed to read clipboard:', err);
+      alert('Unable to read clipboard. Please check permissions.');
+    }
   }
 
   clear() {

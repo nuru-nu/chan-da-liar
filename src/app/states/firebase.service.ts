@@ -22,8 +22,9 @@ import {
    Transaction
 } from 'firebase/firestore/lite';
 import { User, browserLocalPersistence, getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { Recording } from "./prerecording.service";
-import { CompletedConversation, ConversationSettings } from './conversation.service';
+import { Recording } from './types';
+import { ConversationSettings } from './conversation.service';
+import { CompletedConversation } from "./conversation.service";
 
 const DEFAULT_API_KEY = 'AIzaSyCbsk8PYE8siL58giIaDG1BjXLmtNWPjSY';
 const DEFAULT_APP_ID = '1:949850774703:web:67bc87b614929fed3a085a';

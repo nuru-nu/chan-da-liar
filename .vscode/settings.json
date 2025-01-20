@@ -1,0 +1,10 @@
+{
+  "typescript.suggest.completeFunctionCalls": true,
+  "javascript.suggest.completeFunctionCalls": true,
+  "editor.snippets.codeActions.enabled": true,
+  "jest.autoRun": {
+    "watch": true,
+    "onSave": "test-src-file"
+  },
+  "jest.showCoverageOnLoad": true
+}

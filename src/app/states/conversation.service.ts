@@ -1,13 +1,12 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, Subject, Subscription } from 'rxjs';
 import { OpenAiService, OpenAIState, PromptMessage } from './open-ai.service';
-import { Recording } from './prerecording.service';
+import { ConversationRole, Recording } from './types';
 import { OngoingRecognition } from './ongoing-recognizer';
 import { SpeakerService } from './speaker.service';
 import { FirebaseService } from './firebase.service';
 import { KeyboardService } from '../keyboard';
 
-export type ConversationRole = 'assistant' | 'user' | 'system';
 export type Decision = 'yes' | 'skip' | 'open';
 
 export type CompletedConversation = CompletedConversationMessage[];
@@ -262,7 +261,7 @@ export class ConversationService {
 
     const highlight = this.highlightSubject.value;
     const messages = this.messagesSubject.value;
-    const insertAt = 
+    const insertAt =
       highlight === null
       ? messages.length
       : messages.findIndex(message => message.id === highlight.id);

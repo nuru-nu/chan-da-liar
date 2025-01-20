@@ -14,7 +14,8 @@ import { BehaviorSubject, combineLatest, debounceTime, mergeMap, shareReplay} fr
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 import { Cache } from '../utils/cache';
 import { FirebaseService } from './firebase.service';
-import { Recording } from "./prerecording.service";
+import { Recording } from './types';
+import { removeMeta } from '../utils/scriptUtils';
 
 export interface AzureCognitiveSettings {
   apiKey: string;
@@ -57,12 +58,6 @@ const LOCALE_SELECTION = new Set([
   'en-US', 'en-GB', 'de-DE', 'de-CH',
 ]);
 
-
-const cleanRegex = /<[^>]*>|\[[^\]]*\]|\([^)]*\)/g;
-function parseContent(content: string) {
-  content = content.replace(cleanRegex, '');
-  return { content };
-}
 
 @Injectable({
   providedIn: 'root',
@@ -280,7 +275,7 @@ export class AzureCognitiveService {
       const style_close = speechConfig.style ? `</mstts:express-as>` : '';
       // const style_open = '', style_close = '';
       const lang = speechConfig.voiceShortName?.substring(0, 5);
-      const { content } = parseContent(rec.content);
+      const { content } = removeMeta(rec.content);
       const ssml = `
       <speak version="1.0"
           xmlns="http://www.w3.org/2001/10/synthesis"

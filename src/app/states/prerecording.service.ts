@@ -2,11 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, map, shareReplay } from 'rxjs';
 import { ConfigService } from '../config.service';
 import { FirebaseService } from './firebase.service';
-
-export interface Recording {
-  content: string;
-  rate?: number;
-}
+import { Recording } from './types';
 
 export interface PrerecordingState {
   recordings: Recording[];

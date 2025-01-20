@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { ConversationNotes, ConversationSummary, FirebaseService, FirebaseState, makeConversationKey, parseConversationKey } from './states/firebase.service';
 import { BehaviorSubject, combineLatest, mergeMap, shareReplay } from 'rxjs';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
-import { CompletedConversation, ConversationService } from './states/conversation.service';
+import { ConversationService } from './states/conversation.service';
+import { CompletedConversation } from "./states/conversation.service";
 import { RoutedInterface, RouterService } from './router.service';
 
 interface Conversation {

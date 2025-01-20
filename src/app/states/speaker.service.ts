@@ -3,7 +3,7 @@ import { BehaviorSubject, combineLatest } from 'rxjs';
 import {AzureCognitiveService, SpeakVisum} from './azure-cognitive.service';
 import { DeviceService } from './device.service';
 import { LightService } from './light.service';
-import { Recording } from "./prerecording.service";
+import { Recording } from './types';
 
 export interface OutputQueueItem {
   source: string;

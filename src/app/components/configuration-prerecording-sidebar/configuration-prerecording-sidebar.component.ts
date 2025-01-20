@@ -1,6 +1,7 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { ModalHandle, ModalInstance } from '../../modules/modal/modal.service';
-import { PrerecordingService, Recording } from "../../states/prerecording.service";
+import { PrerecordingService } from "../../states/prerecording.service";
+import { Recording } from 'src/app/states/types';
 import { TextareaComponent } from '../textarea/textarea.component';
 
 @Component({

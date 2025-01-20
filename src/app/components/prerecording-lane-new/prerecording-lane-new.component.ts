@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import {
   PrerecordingService,
-  Recording,
 } from '../../states/prerecording.service';
+import { Recording } from 'src/app/states/types';
 import { ConversationService } from '../../states/conversation.service';
 
 @Component({

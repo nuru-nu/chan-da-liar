@@ -4,8 +4,8 @@ import { ModalService } from '../../modules/modal/modal.service';
 import { ConfigurationPrerecordingSidebarComponent } from '../configuration-prerecording-sidebar/configuration-prerecording-sidebar.component';
 import {
   PrerecordingService,
-  Recording,
 } from '../../states/prerecording.service';
+import { Recording } from 'src/app/states/types';
 import { ConversationService } from '../../states/conversation.service';
 
 @Component({

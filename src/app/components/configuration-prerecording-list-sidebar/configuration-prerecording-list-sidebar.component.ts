@@ -1,6 +1,7 @@
 import { Component, ViewChild, ViewContainerRef } from '@angular/core';
 import { ModalHandle, ModalInstance, ModalService } from '../../modules/modal/modal.service';
-import { PrerecordingService, Recording } from '../../states/prerecording.service';
+import { PrerecordingService } from '../../states/prerecording.service';
+import { Recording } from 'src/app/states/types';
 import {
   ConfigurationPrerecordingSidebarComponent
 } from '../configuration-prerecording-sidebar/configuration-prerecording-sidebar.component';
