@@ -62,13 +62,21 @@ export interface ConversationSettings {
   props?: string;
 }
 
+const nows = new Set();
+const uniqueNow = () => {
+  let now = Date.now();
+  while (nows.has(now)) now++;
+  nows.add(now);
+  return now;
+};
+
 class MessageBuilder {
   private message: CompletedConversationMessage;
   constructor(text: string, role: ConversationRole) {
     this.message = {
       completed: true,
 
-      id: Date.now(),
+      id: uniqueNow(),
       role,
       prefix: null,
       text,
