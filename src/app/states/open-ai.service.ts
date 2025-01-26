@@ -1,11 +1,10 @@
 import { Injectable } from '@angular/core';
-import { Configuration, Model, OpenAIApi } from 'openai';
+import { Configuration, Model, OpenAIApi, ListModelsResponse } from 'openai';
 import { ConfigService } from '../config.service';
 import {
   BehaviorSubject,
   combineLatest,
   debounceTime,
-  firstValueFrom,
   mergeMap,
   shareReplay,
 } from 'rxjs';
@@ -19,6 +18,7 @@ import { FirebaseService, LoginState } from './firebase.service';
 
 export interface OpenAISettings {
   apiKey: string;
+  deepseekApiKey?: string;
 }
 
 export interface OpenAIState {
@@ -40,12 +40,14 @@ export interface PromptMessage {
 }
 
 const OAI_BASE_URL = 'https://api.openai.com/v1';
+const DEEPSEEK_BASE_URL = 'https://api.deepseek.com/v1';
 // https://github.com/ggerganov/llama.cpp/blob/master/examples/server/README.md
 const LLAMA_CPP_BASE_URL = 'http://127.0.0.1:8000';
 // https://github.com/ollama/ollama/blob/main/docs/api.md
 const OLLAMA_BASE_URL = 'http://127.0.0.1:11434';
 const LLAMA_CPP_PREFIX = 'llama.cpp:';
 const OLLAMA_PREFIX = 'ollama:';
+const DEEPSEEK_PREFIX = 'deepseek:';
 
 @Injectable({
   providedIn: 'root',
@@ -58,6 +60,7 @@ export class OpenAiService {
 
   private modalCache = new Cache<Model[]>();
   private apiCache = new Cache<OpenAIApi>();
+  private deepseekCache = new Cache<OpenAIApi>();
 
   totalCost = this.config.watch<number>(this.totalCostKey, 0);
 
@@ -87,6 +90,7 @@ export class OpenAiService {
         if (config) {
           this.managedSettings.next({
             apiKey: config.openaiApiKey,
+            deepseekApiKey: config.deepseekApiKey,
           });
         }
       } else {
@@ -98,13 +102,22 @@ export class OpenAiService {
   private idWithoutPrefix(model: Model) {
     if (model.id.startsWith(LLAMA_CPP_PREFIX)) return model.id.substring(LLAMA_CPP_PREFIX.length);
     if (model.id.startsWith(OLLAMA_PREFIX)) return model.id.substring(OLLAMA_PREFIX.length);
+    if (model.id.startsWith(DEEPSEEK_PREFIX)) return model.id.substring(DEEPSEEK_PREFIX.length);
     return model.id;
   }
 
   private getOpenAiBase(model: Model) {
     if (model.id.startsWith(LLAMA_CPP_PREFIX)) return LLAMA_CPP_BASE_URL;
     if (model.id.startsWith(OLLAMA_PREFIX)) return `${OLLAMA_BASE_URL}/v1`;
+    if (model.id.startsWith(DEEPSEEK_PREFIX)) return `${DEEPSEEK_BASE_URL}`;
     return OAI_BASE_URL;
+  }
+
+  private getOpenAiToken(model: Model) {
+    if (model.id.startsWith(LLAMA_CPP_PREFIX)) return '(llama.cpp)';
+    if (model.id.startsWith(OLLAMA_PREFIX)) return '(ollama)';
+    if (model.id.startsWith(DEEPSEEK_PREFIX)) return this.managedSettings.value?.deepseekApiKey;
+    return this.managedSettings.value?.apiKey;
   }
 
   private getExtraArgs(model: Model) {
@@ -127,11 +140,13 @@ export class OpenAiService {
       return recognizer.recognition();
     }
 
-    fetch(`${this.getOpenAiBase(this.currentState.selectedModel)}/chat/completions`, {
+    const chatUrl = `${this.getOpenAiBase(this.currentState.selectedModel)}/chat/completions`;
+    console.log('chatUrl', chatUrl);
+    fetch(chatUrl, {
       method: 'post',
       headers: new Headers({
         // https://platform.openai.com/account/usage
-        Authorization: `Bearer ${this.currentState.settings.apiKey}`,
+        Authorization: `Bearer ${this.getOpenAiToken(this.currentState.selectedModel)}`,
         'Content-Type': 'application/json',
       }),
       body: JSON.stringify({
@@ -194,11 +209,26 @@ export class OpenAiService {
     return recognizer.recognition();
   }
 
+  // async getDeepseekModels(): Promise<import("axios").AxiosResponse<ListModelsResponse, any>> {
+  async getDeepseekModels(): Promise<ListModelsResponse> {
+      const key = this.managedSettings.value?.deepseekApiKey;
+    if (!key) return Promise.reject();
+    return fetch(`${DEEPSEEK_BASE_URL}/models`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`,
+      },
+    }).then(response => response.json());
+  }
+
   async getModels(openai: OpenAIApi): Promise<Model[]> {
-    const [oaiModels, llamaCppProps, ollamaTags] = await Promise.allSettled([
+    const [oaiModels, deepseekModels, llamaCppProps, ollamaTags] = await Promise.allSettled([
       // This triggers a "Refused to set unsafe header" error because
       // https://github.com/openai/openai-node/issues/6
       openai.listModels(),
+      // Note: `new OpenAIApi(configuration, DEEPSEEK_BASE_URL)` did NOT work.
+      this.getDeepseekModels(),
       fetch(`${LLAMA_CPP_BASE_URL}/props`),
       fetch(`${OLLAMA_BASE_URL}/api/tags`),
     ]);
@@ -208,6 +238,14 @@ export class OpenAiService {
           (d) => d.owned_by === 'openai' || d.owned_by === 'system'));
     } else {
       console.warn('Could not get OpenAi models', oaiModels);
+    }
+    if (deepseekModels.status === 'fulfilled') {
+      models.push(...deepseekModels.value.data.filter(
+          (d) => d.owned_by === 'deepseek'
+        ).map(
+          (d) => ({...d, id: `${DEEPSEEK_PREFIX}${d.id}`})
+        ));
+      console.log('deepseek', deepseekModels.value.data);
     }
     if (llamaCppProps.status === 'fulfilled') {
       const props = await llamaCppProps.value.json();

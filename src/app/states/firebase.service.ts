@@ -52,6 +52,7 @@ export interface Config {
   azureApiKey: string;
   azureRegion: string;
   openaiApiKey: string;
+  deepseekApiKey?: string;
 }
 
 export interface UserSettings {
