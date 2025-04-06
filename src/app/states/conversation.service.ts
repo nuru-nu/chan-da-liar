@@ -171,7 +171,7 @@ export class ConversationService {
     keyboard.registerExclusive('Space', (e: KeyboardEvent) => this.decide('yes', e.shiftKey, e.ctrlKey));
     keyboard.registerExclusive('Enter', (e: KeyboardEvent) => this.maybeAcceptAllThenPrompt(e.shiftKey));
     keyboard.registerExclusive('Backspace', (e: KeyboardEvent) => e.ctrlKey ? this.delete(e.shiftKey) : this.decide('skip', e.shiftKey));
-    keyboard.registerExclusive('ArrowUp', (e: KeyboardEvent) => this.undecide());
+    keyboard.registerExclusive('ArrowUp', (e: KeyboardEvent) => this.undecide(e.shiftKey));
     keyboard.registerExclusive('KeyS', (e: KeyboardEvent) => this.split(e.shiftKey));
     keyboard.registerExclusive('KeyM', (e: KeyboardEvent) => this.merge(e.shiftKey));
     keyboard.registerExclusive('KeyQ', (e: KeyboardEvent) => this.toggleRegie());
@@ -295,15 +295,19 @@ export class ConversationService {
     }
   }
 
-  private undecide() {
+  private undecide(toTheBeginning: Boolean) {
     const messages = this.messagesSubject.value;
     const highlight = this.highlightSubject.value;
-    const idx = highlight ? messages.findIndex(m => m.id === highlight.id) : messages.length;
-    if (idx < 1) return;
-    const previous = messages[idx - 1];
-    if (previous.completed) {
-      previous.decision = 'open';
-      this.nextMessages(messages);
+    let idx = highlight ? messages.findIndex(m => m.id === highlight.id) : messages.length;
+    while (true) {
+      idx--;
+      if (idx < 0) return;
+      const previous = messages[idx];
+      if (previous.completed) {
+        previous.decision = 'open';
+        this.nextMessages(messages);
+      }
+      if (!toTheBeginning) break;
     }
   }
 
