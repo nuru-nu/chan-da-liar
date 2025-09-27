@@ -45,7 +45,7 @@ export function parseScript(script: string): ScriptMessage[] {
         : `(${currentSpeaker}) ${line}`;
 
       messages.push({
-        role: currentSpeaker === 'Deliar' ? 'assistant' : 'user',
+        role: currentSpeaker.toLocaleLowerCase() === 'deliar' ? 'assistant' : 'user',
         text
       });
     }
@@ -53,4 +53,3 @@ export function parseScript(script: string): ScriptMessage[] {
 
   return messages;
 }
-
